@@ -16,13 +16,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from clipping import __version__
-from .routes import jobs, files, settings
+from .routes import jobs, files, settings, system
+from . import store
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application startup/shutdown lifecycle."""
     print("🚀 Clipit Studio — Backend starting...")
+    reconciled = store.reconcile_orphan_jobs()
+    if reconciled > 0:
+        print(f"⚠️ Reconciled {reconciled} interrupted job(s) from previous session.")
     yield
     print("👋 Backend shutting down...")
 
@@ -55,6 +59,7 @@ app.add_middleware(
 app.include_router(jobs.router)
 app.include_router(files.router)
 app.include_router(settings.router)
+app.include_router(system.router)
 
 
 @app.get("/")

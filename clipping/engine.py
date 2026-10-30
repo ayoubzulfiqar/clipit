@@ -9,8 +9,15 @@ import os
 import re
 import time
 
-from yt_dlp import YoutubeDL
-from faster_whisper import WhisperModel
+try:
+    from yt_dlp import YoutubeDL
+except ImportError:
+    YoutubeDL = None
+
+try:
+    from faster_whisper import WhisperModel
+except ImportError:
+    WhisperModel = None
 
 
 # ==============================================================================

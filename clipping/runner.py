@@ -153,10 +153,13 @@ def run_pipeline(cfg, whisper_model_instance=None) -> list[dict]:
     )
     
     # Get target dimensions for auto-bitrate calculation
-    import cv2
-    cap_e = cv2.VideoCapture(cfg.file_video_asli)
-    src_h_e = int(cap_e.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    cap_e.release()
+    try:
+        import cv2
+        cap_e = cv2.VideoCapture(cfg.file_video_asli)
+        src_h_e = int(cap_e.get(cv2.CAP_PROP_FRAME_HEIGHT) or 1080)
+        cap_e.release()
+    except (ImportError, Exception):
+        src_h_e = 1080
     
     target_w_e, target_h_e = studio._get_render_dims(cfg, cfg.pilihan_rasio, source_h=src_h_e)
     video_encoder = studio.detect_video_encoder(cfg, target_h=target_h_e)
@@ -166,10 +169,13 @@ def run_pipeline(cfg, whisper_model_instance=None) -> list[dict]:
         print("⚙️ Menyiapkan Video Glitch Transisi...")
         
         # Get source dimensions for proper glitch scaling
-        import cv2
-        cap_g = cv2.VideoCapture(cfg.file_video_asli)
-        source_h_g = int(cap_g.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        cap_g.release()
+        try:
+            import cv2
+            cap_g = cv2.VideoCapture(cfg.file_video_asli)
+            source_h_g = int(cap_g.get(cv2.CAP_PROP_FRAME_HEIGHT) or 1080)
+            cap_g.release()
+        except (ImportError, Exception):
+            source_h_g = 1080
 
         file_glitch_ts = studio.siapkan_glitch_video(
             cfg.pilihan_rasio, cfg, video_encoder, source_h=source_h_g

@@ -113,6 +113,44 @@ class TestJobStore(unittest.TestCase):
             self.assertEqual(migrated_job["status"], "completed")
             self.assertEqual(migrated_job["config"]["clips"], 3)
 
+    def test_reconcile_orphan_jobs(self):
+        from web.api import store
+        from web.api.models import JobStatus
+
+        with patch("web.api.store.PERSIST_PATH", self.persist_path), \
+             patch("web.api.store.DB_PATH", self.db_path):
+            store._init_db()
+            j1 = store.create_job(url="https://youtube.com/watch?v=1")
+            j2 = store.create_job(url="https://youtube.com/watch?v=2")
+            j3 = store.create_job(url="https://youtube.com/watch?v=3")
+            j4 = store.create_job(url="https://youtube.com/watch?v=4")
+
+            store.set_status(j2, JobStatus.RENDERING)
+            store.set_status(j3, JobStatus.COMPLETED)
+            store.set_error(j4, "Prior failure")
+
+            reconciled = store.reconcile_orphan_jobs("Server restarted")
+            self.assertEqual(reconciled, 2)
+
+            # j1 (was queued) -> now failed
+            res_j1 = store.get_job(j1)
+            self.assertEqual(res_j1["status"], JobStatus.FAILED.value)
+            self.assertIn("Server restarted", res_j1["error"])
+
+            # j2 (was rendering) -> now failed
+            res_j2 = store.get_job(j2)
+            self.assertEqual(res_j2["status"], JobStatus.FAILED.value)
+            self.assertIn("Server restarted", res_j2["error"])
+
+            # j3 (was completed) -> untouched
+            res_j3 = store.get_job(j3)
+            self.assertEqual(res_j3["status"], JobStatus.COMPLETED.value)
+
+            # j4 (was already failed) -> untouched
+            res_j4 = store.get_job(j4)
+            self.assertEqual(res_j4["status"], JobStatus.FAILED.value)
+            self.assertEqual(res_j4["error"], "Prior failure")
+
 
 if __name__ == "__main__":
     unittest.main()

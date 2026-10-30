@@ -390,3 +390,37 @@ def get_queued_count() -> int:
             (JobStatus.QUEUED.value,),
         )
         return cur.fetchone()[0]
+
+
+def reconcile_orphan_jobs(error_message: str = "Interrupted by server restart") -> int:
+    """
+    Find jobs stuck in non-terminal states (queued, downloading, transcribing,
+    analyzing, rendering) and mark them as failed.
+
+    Returns the number of reconciled jobs.
+    """
+    non_terminal = (
+        JobStatus.QUEUED.value,
+        JobStatus.DOWNLOADING.value,
+        JobStatus.TRANSCRIBING.value,
+        JobStatus.ANALYZING.value,
+        JobStatus.RENDERING.value,
+    )
+    now_iso = _now().isoformat()
+    with _lock:
+        with _get_conn() as conn:
+            placeholders = ",".join("?" for _ in non_terminal)
+            cur = conn.execute(
+                f"""
+                UPDATE jobs SET
+                    status = ?,
+                    error = ?,
+                    updated_at = ?
+                WHERE status IN ({placeholders});
+                """,
+                (JobStatus.FAILED.value, error_message, now_iso, *non_terminal),
+            )
+            count = cur.rowcount
+        if count > 0:
+            _persist()
+        return count
