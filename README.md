@@ -596,7 +596,10 @@ clipit/
 ├── .env.sample              # API key template
 ├── .gitignore
 ├── README.md                # English docs
-├── README_ID.md             # Indonesian docs
+├── README_AR.md             # Arabic docs
+├── README_RU.md             # Russian docs
+├── README_ZH.md             # Chinese docs
+├── README_KO.md             # Korean docs
 ├── clipping/
 │   ├── config.py            # Master configuration & argparse
 │   ├── engine.py            # Download → Transcribe → Gemini AI
