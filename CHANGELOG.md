@@ -978,7 +978,7 @@ All notable changes to the **Clipit** project will be documented in this file.
 - **Modular CLI Architecture**: Completely refactored the project from a monolithic Jupyter Notebook into a clean, CLI-based Python project (`main.py` & `clipping/` package).
 - **Dynamic Scaling & Font Pairing (Kinetic Typography)**: Specific core words within the running subtitles now scale dynamically for emphasis (e.g., "I eat *RICE*").
 - **Contextual B-roll Injection**: The system now automatically fetches and splices contextual B-roll footage from Pexels based on relevant keywords spoken in the clip.
-- **Multi-language Documentation**: Added `README.md` (English) and `README_ID.md` (Indonesian), complete with execution guides for Google Colab.
+- **Multi-language Documentation**: Added `README.md` (English), `README_AR.md` (Arabic), `README_RU.md` (Russian), `README_ZH.md` (Chinese), and `README_KO.md` (Korean), complete with execution guides for Google Colab.
 - **Environment Management**: Introduced `.env` support to securely manage API keys, removing hardcoded/Colab userdata from the core logic.
 
 ### Changed
