@@ -5,7 +5,7 @@ web.api.models — Pydantic schemas for request/response validation.
 from __future__ import annotations
 
 import enum
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from pydantic import BaseModel, Field
@@ -126,7 +126,7 @@ class JobProgressEvent(BaseModel):
     total_steps: int
     message: str
     percent: float = 0.0
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 # ---------------------------------------------------------------------------

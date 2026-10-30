@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import asyncio
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
@@ -45,8 +45,8 @@ def _job_to_response(job: dict) -> JobResponse:
     return JobResponse(
         id=job["id"],
         status=job.get("status", JobStatus.QUEUED),
-        created_at=job.get("created_at", datetime.utcnow()),
-        updated_at=job.get("updated_at", datetime.utcnow()),
+        created_at=job.get("created_at", datetime.now(timezone.utc)),
+        updated_at=job.get("updated_at", datetime.now(timezone.utc)),
         url=job.get("url"),
         upload_filename=job.get("upload_filename"),
         source=job.get("source", "youtube"),
