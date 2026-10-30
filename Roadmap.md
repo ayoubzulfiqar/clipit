@@ -104,7 +104,7 @@ wiki), `notebooks/` (Colab/Kaggle), `youtube_tracker/`, `youtube_uploader/`,
 7. **Worker is single-process.** No distributed queue; concurrency via env var only.
 8. **No observability.** No metrics, structured tracing, or error reporting (Sentry).
 9. **Frontend has no tests.** React dashboard untested; no E2E.
-10. **i18n incomplete.** README_ID exists but UI/CLI mostly Indonesian/English mixed.
+10. **i18n expanded.** README now available in English, Arabic, Russian, Chinese, Korean. UI/CLI localization still pending.
 11. **No plugin system.** Extensions require core edits.
 12. **Notebooks drift.** Colab/Kaggle notebooks may be out of sync with CLI.
 13. **No model caching strategy.** Whisper/Gemini models re-downloaded per environment.
