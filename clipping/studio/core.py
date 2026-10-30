@@ -1,13 +1,8 @@
 """
-Core Studio pipeline implementation extracted from clipping/studio.py.
-
-This module acts as an orchestrator, importing from modularized subcomponents
-to maintain original behavior while allowing clipping/studio.py to remain
-a thin orchestration and compatibility entry point.
+Core Studio pipeline implementation.
 """
 
 import html
-import importlib.util
 import json
 import math
 import os
@@ -21,74 +16,77 @@ import time
 import urllib.parse
 import urllib.request
 
-import cv2
-import mediapipe as mp
-import numpy as np
-import requests
-from mediapipe.tasks import python as mp_python
-from mediapipe.tasks.python import vision as mp_vision
-from PIL import Image, ImageDraw, ImageFont
-from yt_dlp import YoutubeDL
+try:
+    import cv2
+except ImportError:
+    cv2 = None
 
-def _load_studio_internal_module(file_name: str, module_alias: str):
-    module_path = os.path.join(os.path.dirname(__file__), file_name)
-    spec = importlib.util.spec_from_file_location(module_alias, module_path)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+try:
+    import numpy as np
+except ImportError:
+    np = None
 
-# Import modules to re-export for studio.py
-utils = _load_studio_internal_module("utils.py", "clipping_studio_utils")
+from . import utils
+from . import face_detection
+from . import typography
+from . import audio_bgm
+from . import broll
+from . import subtitles
+from . import effects
+from . import transitions
+from . import thumbnail
+from . import render_hybrid
+from . import render_split_screen
+from . import render_camera_switch
+from . import helpers as _helpers
+from . import ffmpeg_utils as _ffmpeg_utils
+from . import v2_helpers
+from . import edge_glow as edge_glow_mod
+
 _get_cv2_interpolation = utils._get_cv2_interpolation
 _resize_frame = utils._resize_frame
 _get_render_dims = utils._get_render_dims
 _is_vertical_ratio = utils._is_vertical_ratio
-face_detection = _load_studio_internal_module("face_detection.py", "clipping_studio_face_detection")
+
 get_face_detector = face_detection.get_face_detector
 estimate_speaker_count_from_video = face_detection.estimate_speaker_count_from_video
-typography = _load_studio_internal_module("typography.py", "clipping_studio_typography")
+
 download_google_font = typography.download_google_font
 register_fonts_for_libass = typography.register_fonts_for_libass
 siapkan_font_tipografi = typography.siapkan_font_tipografi
-audio_bgm = _load_studio_internal_module("audio_bgm.py", "clipping_studio_audio_bgm")
+
 get_local_bgm_file = audio_bgm.get_local_bgm_file
 build_bgm_filter = audio_bgm.build_bgm_filter
-broll = _load_studio_internal_module("broll.py", "clipping_studio_broll")
+
 download_pexels_broll = broll.download_pexels_broll
 crop_center_broll = broll.crop_center_broll
-subtitles = _load_studio_internal_module("subtitles.py", "clipping_studio_subtitles")
+
 buat_file_ass = subtitles.buat_file_ass
-effects = _load_studio_internal_module("effects.py", "clipping_studio_effects")
+
 siapkan_glitch_video = effects.siapkan_glitch_video
-transitions = _load_studio_internal_module("transitions.py", "clipping_studio_transitions")
+
 download_transition_raw = transitions.download_transition_raw
 download_all_transitions = transitions.download_all_transitions
 get_random_transition = transitions.get_random_transition
 prepare_transition_clip = transitions.prepare_transition_clip
 TMP_TRANSITION_POOL = transitions.TMP_TRANSITION_POOL
-thumbnail = _load_studio_internal_module("thumbnail.py", "clipping_studio_thumbnail")
-buat_thumbnail = thumbnail.buat_thumbnail
-render_hybrid = _load_studio_internal_module("render_hybrid.py", "clipping_studio_render_hybrid")
-buat_video_hybrid = render_hybrid.buat_video_hybrid
-render_split_screen = _load_studio_internal_module("render_split_screen.py", "clipping_studio_render_split_screen")
-buat_video_split_screen = render_split_screen.buat_video_split_screen
-render_camera_switch = _load_studio_internal_module("render_camera_switch.py", "clipping_studio_render_camera_switch")
-buat_video_camera_switch = render_camera_switch.buat_video_camera_switch
 
-# Helpers and ffmpeg_utils
-_helpers = _load_studio_internal_module("helpers.py", "clipping_studio_helpers")
-_ffmpeg_utils = _load_studio_internal_module("ffmpeg_utils.py", "clipping_studio_ffmpeg_utils")
+buat_thumbnail = thumbnail.buat_thumbnail
+
+buat_video_hybrid = render_hybrid.buat_video_hybrid
+buat_video_split_screen = render_split_screen.buat_video_split_screen
+buat_video_camera_switch = render_camera_switch.buat_video_camera_switch
 
 format_seconds = _helpers.format_seconds
 escape_ffmpeg_filter_value = _helpers.escape_ffmpeg_filter_value
+
 detect_video_encoder = _ffmpeg_utils.detect_video_encoder
 get_ts_encode_args = _ffmpeg_utils.get_ts_encode_args
 get_mp4_encode_args = _ffmpeg_utils.get_mp4_encode_args
 open_ffmpeg_video_writer = _ffmpeg_utils.open_ffmpeg_video_writer
 build_ffmpeg_progress_cmd = _ffmpeg_utils.build_ffmpeg_progress_cmd
 run_ffmpeg_with_progress = _ffmpeg_utils.run_ffmpeg_with_progress
-v2_helpers = _load_studio_internal_module("v2_helpers.py", "clipping_studio_v2_helpers")
-edge_glow_mod = _load_studio_internal_module("edge_glow.py", "clipping_studio_edge_glow")
+
 generate_edge_glow_video = edge_glow_mod.generate_edge_glow_video
 
 def proses_klip(

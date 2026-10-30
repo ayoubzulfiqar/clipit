@@ -13,6 +13,7 @@ from types import SimpleNamespace
 
 # Import defaults from existing config module
 from clipping.config import (
+    ClipitConfig,
     ASS_ALIGN_169,
     ASS_ALIGN_916,
     ASS_FONT_169,
@@ -109,7 +110,7 @@ def build_config_from_payload(
     default_cookies_path = os.path.join(base_dir, "youtube_cookies.txt")
     yt_cookies = default_cookies_path if os.path.exists(default_cookies_path) else None
 
-    cfg = SimpleNamespace(
+    cfg = ClipitConfig(
         # Paths
         base_dir=base_dir,
         outputs_dir=outputs_dir,

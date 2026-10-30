@@ -16,8 +16,15 @@ Strategy:
 import math
 import os
 import subprocess
-import numpy as np
-import cv2
+try:
+    import numpy as np
+except ImportError:
+    np = None
+
+try:
+    import cv2
+except ImportError:
+    cv2 = None
 
 
 def generate_edge_glow_video(
@@ -55,6 +62,8 @@ def generate_edge_glow_video(
         equals an integer, guaranteeing the hue returns to its starting
         position at the loop boundary (no visible stutter/flash).
     """
+    if cv2 is None:
+        raise ImportError("OpenCV (cv2) is required for edge glow generation. Run: pip install opencv-python")
     # ---- 0. Ensure seamless loop (adjust speed for integer rotations) ----
     if seamless_loop and duration > 0:
         raw_rotations = duration * glow_speed

@@ -15,6 +15,7 @@ import os
 import sys
 import time
 
+from clipping import __version__
 from clipping.config import build_config, _make_url_slug
 
 
@@ -109,7 +110,7 @@ def _run_single_url(cfg, url, version, idx=None, total=None):
 def main():
     cfg = build_config(sys.argv[1:])
 
-    version = "1.15.0"
+    version = __version__
 
     # ── Story Clip Mode ──────────────────────────────────────────────
     if getattr(cfg, "story_mode", False):

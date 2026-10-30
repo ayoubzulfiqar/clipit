@@ -15,6 +15,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
+from clipping import __version__
 from .routes import jobs, files, settings
 
 
@@ -29,7 +30,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Clipit Studio",
     description="AI Auto-Clipper & Teaser Generator — Web GUI API",
-    version="1.12.0",
+    version=__version__,
     lifespan=lifespan,
 )
 
@@ -60,7 +61,7 @@ app.include_router(settings.router)
 async def root():
     return {
         "name": "Clipit Studio",
-        "version": "1.13.0",
+        "version": __version__,
         "docs": "/docs",
         "health": "/api/health",
     }

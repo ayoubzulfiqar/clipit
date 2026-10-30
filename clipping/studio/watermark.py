@@ -13,9 +13,22 @@ Usage (dipanggil per-frame dari renderer):
 import os
 from abc import ABC, abstractmethod
 
-import cv2
-import numpy as np
-from PIL import Image, ImageDraw, ImageFont
+try:
+    import cv2
+except ImportError:
+    cv2 = None
+
+try:
+    import numpy as np
+except ImportError:
+    np = None
+
+try:
+    from PIL import Image, ImageDraw, ImageFont
+except ImportError:
+    Image = None
+    ImageDraw = None
+    ImageFont = None
 
 
 # ==============================================================================
@@ -453,6 +466,9 @@ def apply_watermark(frame, cfg):
     """
     if not getattr(cfg, "watermark_enabled", False):
         return frame
+
+    if cv2 is None:
+        raise ImportError("OpenCV (cv2) is required for watermark rendering. Run: pip install opencv-python")
 
     # Cache renderer per cfg object identity
     cfg_id = id(cfg)

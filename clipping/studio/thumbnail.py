@@ -1,38 +1,19 @@
-import html
-import importlib.util
-import json
-import math
 import os
-import random
-import re
-import shutil
-import string
 import subprocess
 import textwrap
-import time
-import urllib.parse
-import urllib.request
 
-import cv2
-import mediapipe as mp
-import numpy as np
-import requests
-from mediapipe.tasks import python as mp_python
-from mediapipe.tasks.python import vision as mp_vision
-from PIL import Image, ImageDraw, ImageFont
-from yt_dlp import YoutubeDL
+try:
+    from PIL import Image, ImageDraw, ImageFont
+except ImportError:
+    Image = None
+    ImageDraw = None
+    ImageFont = None
+
+from . import helpers as _helpers
+from . import ffmpeg_utils as _ffmpeg_utils
 
 FIREFOX_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:148.0) Gecko/20100101 Firefox/148.0"
 
-def _load_studio_internal_module(file_name: str, module_alias: str):
-    module_path = os.path.join(os.path.dirname(__file__), file_name)
-    spec = importlib.util.spec_from_file_location(module_alias, module_path)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
-
-_helpers = _load_studio_internal_module("helpers.py", "clipping_studio_helpers")
-_ffmpeg_utils = _load_studio_internal_module("ffmpeg_utils.py", "clipping_studio_ffmpeg_utils")
 format_seconds = _helpers.format_seconds
 escape_ffmpeg_filter_value = _helpers.escape_ffmpeg_filter_value
 detect_video_encoder = _ffmpeg_utils.detect_video_encoder

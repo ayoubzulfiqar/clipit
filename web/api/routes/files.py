@@ -26,6 +26,34 @@ os.makedirs(OUTPUTS_DIR, exist_ok=True)
 MAX_UPLOAD_SIZE = 2 * 1024 * 1024 * 1024
 
 
+def _validate_safe_child_path(base_dir: str, *segments: str) -> str:
+    """
+    Validate that joining segments to base_dir stays strictly inside base_dir.
+    Rejects path traversal, absolute segments, null bytes, and directory escapes.
+    Returns the real canonical path if safe, else raises HTTPException(400).
+    """
+    for seg in segments:
+        if not seg or "\x00" in seg:
+            raise HTTPException(status_code=400, detail="Invalid path parameter")
+        if os.path.sep in seg or (os.path.altsep and os.path.altsep in seg):
+            raise HTTPException(status_code=400, detail="Path traversal detected")
+        if seg in {".", ".."}:
+            raise HTTPException(status_code=400, detail="Path traversal detected")
+
+    real_base = os.path.realpath(base_dir)
+    target_path = os.path.realpath(os.path.join(real_base, *segments))
+
+    try:
+        common = os.path.commonpath([real_base, target_path])
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Path traversal detected")
+
+    if common != real_base or target_path == real_base:
+        raise HTTPException(status_code=400, detail="Path traversal detected")
+
+    return target_path
+
+
 @router.post("/api/upload")
 async def upload_video(file: UploadFile = File(...)) -> dict:
     """
@@ -47,9 +75,13 @@ async def upload_video(file: UploadFile = File(...)) -> dict:
         )
 
     # Sanitize filename
-    safe_name = file.filename.replace(" ", "_")
-    for ch in '<>:"/\\|?*#':
+    safe_name = os.path.basename(file.filename)
+    safe_name = safe_name.replace(" ", "_")
+    for ch in '<>:"/\\|?*#\x00':
         safe_name = safe_name.replace(ch, "")
+
+    if not safe_name or safe_name in {".", ".."}:
+        raise HTTPException(status_code=400, detail="Invalid filename")
 
     dest = os.path.join(UPLOAD_DIR, safe_name)
 
@@ -81,12 +113,8 @@ async def upload_video(file: UploadFile = File(...)) -> dict:
 @router.get("/api/outputs/{job_id}/{filename}")
 async def serve_output(job_id: str, filename: str):
     """Serve a rendered clip or other output file."""
-    # Prevent path traversal
-    if ".." in job_id or ".." in filename:
-        raise HTTPException(status_code=400, detail="Invalid path")
-
-    file_path = os.path.join(OUTPUTS_DIR, job_id, filename)
-    if not os.path.exists(file_path):
+    file_path = _validate_safe_child_path(OUTPUTS_DIR, job_id, filename)
+    if not os.path.exists(file_path) or not os.path.isfile(file_path):
         raise HTTPException(status_code=404, detail="File not found")
 
     # Determine media type
@@ -115,11 +143,8 @@ async def serve_output(job_id: str, filename: str):
 @router.get("/api/outputs/{job_id}")
 async def list_outputs(job_id: str) -> dict:
     """List all output files for a job."""
-    if ".." in job_id:
-        raise HTTPException(status_code=400, detail="Invalid path")
-
-    job_dir = os.path.join(OUTPUTS_DIR, job_id)
-    if not os.path.exists(job_dir):
+    job_dir = _validate_safe_child_path(OUTPUTS_DIR, job_id)
+    if not os.path.exists(job_dir) or not os.path.isdir(job_dir):
         raise HTTPException(status_code=404, detail="Job output directory not found")
 
     files = []

@@ -9,6 +9,34 @@ import hashlib
 import os
 import re
 from types import SimpleNamespace
+from typing import Any
+
+
+class ClipitConfig(SimpleNamespace):
+    """
+    Typed and validated master configuration container for Clipit.
+    Extends SimpleNamespace to ensure 100% backwards compatibility with all
+    existing attribute lookups and getattr(cfg, ...) calls.
+    """
+
+    def to_dict(self) -> dict[str, Any]:
+        """Return configuration as a dictionary."""
+        return vars(self).copy()
+
+    def clone(self, **overrides) -> "ClipitConfig":
+        """Create a shallow copy of the config with optional keyword overrides."""
+        new_dict = self.to_dict()
+        new_dict.update(overrides)
+        return ClipitConfig(**new_dict)
+
+    def __getitem__(self, item: str) -> Any:
+        try:
+            return getattr(self, item)
+        except AttributeError:
+            raise KeyError(item)
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        setattr(self, key, value)
 
 try:
     from dotenv import load_dotenv
@@ -815,7 +843,7 @@ def build_config(argv: list[str] | None = None) -> SimpleNamespace:
     font_dir = os.path.abspath(os.path.join(base_dir, "custom_fonts"))
     os.makedirs(font_dir, exist_ok=True)
 
-    cfg = SimpleNamespace(
+    cfg = ClipitConfig(
         # Paths
         base_dir=base_dir,
         outputs_dir=outputs_dir,
