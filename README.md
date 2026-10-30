@@ -1,7 +1,7 @@
 <br />
 <div align="center">
   <a href="https://github.com/ayoubzulfiqar/clipit">
-    <img src="assets/images/clipit-logo-8x.jpeg" alt="Logo" width="350">
+    <img src="assets/images/clipit-logo-8x.png" alt="Logo" width="350">
   </a>
 
   <h3 align="center">Clipit</h3>
@@ -11,7 +11,15 @@
     An open-source content factory that transforms long-form videos into cinematic short-form highlights with hook teasers, karaoke subtitles, and auto-thumbnails.
     <br />
     <br />
-    <a href="README_ID.md">🇮🇩 Baca dalam Bahasa Indonesia</a>
+    <a href="README.md">🇬🇧 English</a>
+    &middot;
+    <a href="README_AR.md">🇸🇦 العربية</a>
+    &middot;
+    <a href="README_RU.md">🇷🇺 Русский</a>
+    &middot;
+    <a href="README_ZH.md">🇨🇳 中文</a>
+    &middot;
+    <a href="README_KO.md">🇰🇷 한국어</a>
     &middot;
     <a href="https://github.com/ayoubzulfiqar/clipit/issues/new">Report Bug</a>
     &middot;
