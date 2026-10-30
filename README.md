@@ -1,7 +1,7 @@
 <br />
 <div align="center">
   <a href="https://github.com/ayoubzulfiqar/clipit">
-    <img src="assets/images/clipit-logo-8x.png" alt="Logo" width="350">
+    <img src="assets/images/clipit-logo-8x.jpeg" alt="Logo" width="350">
   </a>
 
   <h3 align="center">Clipit</h3>
