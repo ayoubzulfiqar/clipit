@@ -13,7 +13,7 @@ auto-framing, B-roll, karaoke subtitles, cinematic hooks, BGM ducking, voice-ove
 multi-speaker podcast layouts into a single render pipeline. It ships as both a CLI
 (`main.py`) and a web studio (FastAPI backend + React dashboard).
 
-- **Version:** 1.15.0 (CLI) / 1.12.0 (web package)
+- **Version:** 1.15.0 (Unified CLI, Web Studio, API, and Package Manifests)
 - **License:** MIT
 - **Author:** Ayoub Zulfiqar
 - **Repo:** https://github.com/ayoubzulfiqar/clipit
@@ -26,20 +26,22 @@ multi-speaker podcast layouts into a single render pipeline. It ships as both a 
 ┌─────────────────────────────────────────────────────────────┐
 │  CLI (main.py)  ──►  clipping/ (core pipeline)              │
 │  Web (React)    ──►  web/api (FastAPI)  ──►  clipping/      │
-└─────────────────────────────────────────────────────────────┘
-        │
+└──────────────────────────────────────────┬──────────────────┘
+                                           │
         ├── clipping/engine.py          download + transcribe + Gemini analysis
         ├── clipping/runner.py          orchestration (single + batch)
         ├── clipping/story_runner.py    multi-source story clip mode
-        ├── clipping/studio/            rendering primitives (core, effects,
-        │                               subtitles, transitions, bgm, watermark,
-        │                               face detection, typography, thumbnail)
-        ├── clipping/config.py          CLI args + config builder
+        ├── clipping/studio/            canonical package (__init__.py facade,
+        │                               core, effects, subtitles, transitions,
+        │                               bgm, watermark, face detection,
+        │                               typography, thumbnail)
+        ├── clipping/config.py          ClipitConfig typed model + CLI builder
         ├── clipping/metadata.py        title/description/tags per platform
         ├── clipping/voiceover.py       TTS commentary pipeline
-        ├── clipping/diarization.py     speaker diarization (Pyannote)
+        ├── clipping/diarization.py     speaker diarization (Pyannote 3.1)
         ├── clipping/hook_manager.py    hook V2 management
-        └── clipping/studio.py          facade / re-exports
+        ├── web/api/store.py            SQLite persistent store (WAL mode)
+        └── web/api/routes/system.py    system health & readiness probes
 ```
 
 Supporting surfaces: `docs/` (static GitHub Pages studio + legal), `wiki/` (GitHub
@@ -95,20 +97,20 @@ wiki), `notebooks/` (Colab/Kaggle), `youtube_tracker/`, `youtube_uploader/`,
 
 ## 4. Known Gaps & Technical Debt
 
-1. **No automated tests.** Only `youtube_uploader/test_youtube_refresh.py` (manual, needs OAuth). No unit/integration coverage for pipeline, config, or API.
-2. **Version drift.** CLI reports 1.15.0, web package 1.12.0, root() 1.13.0, health 1.12.0. Needs single source of truth.
-3. **No CI/CD.** No GitHub Actions for lint/test/build.
+1. **Automated tests.** [RESOLVED] Built a 29-test automated test suite across unit, security, storage, and E2E pipeline orchestration (`tests/`).
+2. **Version drift.** [RESOLVED] Unified to `1.15.0` single source of truth across CLI, FastAPI backend, `pyproject.toml`, and frontend `package.json`.
+3. **CI/CD.** [RESOLVED] Multi-Python matrix workflow (`.github/workflows/ci.yml`) testing Python 3.10–3.13 and building the Vite frontend on push/PR.
 4. **Heavy dependencies.** Whisper/MediaPipe/OpenCV/Pyannote install is fragile; no lock file or extras groups.
 5. **No auth on web API.** Studio backend is open; CORS only. No user accounts, roles, or API keys.
-6. **Job store is in-memory/file-based.** `web/api/store.py` not horizontally scalable; no Redis/DB.
-7. **Worker is single-process.** No distributed queue; concurrency via env var only.
-8. **No observability.** No metrics, structured tracing, or error reporting (Sentry).
-9. **Frontend has no tests.** React dashboard untested; no E2E.
+6. **Job store persistence.** [RESOLVED] Upgraded from in-memory dict + periodic file dumps to thread-safe SQLite with WAL mode, legacy JSON auto-migration, and server startup orphan reconciliation (`web/api/store.py`).
+7. **Worker is single-process.** In-process `ThreadPoolExecutor` and `asyncio.Semaphore`; needs distributed task broker (ARQ / Celery / Redis) for multi-worker scaling.
+8. **Observability.** [PARTIAL] Added `/api/health` and `/api/health/ready` system diagnostic probes checking FFmpeg, encoders, and storage. Need structured tracing / Sentry.
+9. **Frontend has no tests.** React dashboard untested; no E2E (Vitest / Playwright).
 10. **i18n expanded.** README now available in English, Arabic, Russian, Chinese, Korean. UI/CLI localization still pending.
 11. **No plugin system.** Extensions require core edits.
 12. **Notebooks drift.** Colab/Kaggle notebooks may be out of sync with CLI.
 13. **No model caching strategy.** Whisper/Gemini models re-downloaded per environment.
-14. **Security.** Uploaded files, path traversal risks in `files.py` need audit. Secrets in `.env` only; no secret manager.
+14. **Security.** [RESOLVED] Path traversal strictly patched in `files.py` using `os.path.realpath` and `os.path.commonpath` checks rejecting `/etc/passwd` and `../` traversal.
 15. **Accessibility.** Static docs/dashboard not WCAG-audited.
 16. **No telemetry/opt-in analytics.** Hard to understand usage.
 
@@ -116,14 +118,16 @@ wiki), `notebooks/` (Colab/Kaggle), `youtube_tracker/`, `youtube_uploader/`,
 
 ## 5. Roadmap
 
-### Phase 0 — Stabilization (0–4 weeks)
-- [ ] Single source of truth for version (read from `pyproject.toml`).
+### Phase 0 — Stabilization (Shipped & Hardened)
+- [x] Single source of truth for version (unified `1.15.0` across `clipping`, `pyproject.toml`, `main.py`, `web/api`, `package.json`).
+- [x] Add GitHub Actions: multi-Python matrix test (3.10–3.13) + Node 22 frontend build on push/PR (`.github/workflows/ci.yml`).
+- [x] Add automated unit & integration test suite (29 passing tests in `tests/` covering config, store, metadata, security, ASS, health, and E2E).
+- [x] Fix path-safety in `files.py` (canonical realpath and commonpath validation against directory escape).
+- [x] Resolve package import collision in `clipping/studio` (eliminated dynamic `importlib` spec hack; canonical package with relative imports).
+- [x] Lock frontend dependencies (`web/dashboard/package-lock.json`) and ignore `node_modules` in `.gitignore`.
 - [ ] Add `pyproject` optional dependency groups (`[gpu]`, `[podcast]`, `[dev]`).
 - [ ] Generate `requirements-lock.txt` / use `uv` or `poetry`.
 - [ ] Add pre-commit hooks (ruff, black, mypy, pytest).
-- [ ] Add GitHub Actions: lint + typecheck + unit tests on PR.
-- [ ] Add basic unit tests for `config.build_config`, `_make_url_slug`, metadata generators.
-- [ ] Fix path-safety in `files.py` (sanitize, allow-list).
 - [ ] Normalize logging (structured, levels, request IDs).
 - [ ] Document environment variables in `.env.sample` (already good; add validation).
 
@@ -141,8 +145,10 @@ wiki), `notebooks/` (Colab/Kaggle), `youtube_tracker/`, `youtube_uploader/`,
 
 ### Phase 2 — Web Studio & UX (2–4 months)
 - [ ] **Authentication & multi-user.** JWT/OAuth, per-user jobs, quotas, roles (admin/user).
-- [ ] **Persistent job store.** Postgres/SQLite with migrations (Alembic); Redis queue (RQ/Celery/ARQ).
-- [ ] **Real-time progress.** WebSocket/SSE for job stages instead of polling.
+- [x] **Persistent job store.** SQLite with WAL mode, auto-migration from legacy `jobs.json`, and startup orphan recovery (`web/api/store.py`).
+- [x] **Real-time progress.** SSE streaming for job stages (`web/api/routes/jobs.py`).
+- [x] **Health & readiness diagnostics.** `/api/health` and `/api/health/ready` endpoints (`web/api/routes/system.py`).
+- [ ] **Distributed task queue.** Decouple in-process threadpool to Redis queue (ARQ/Celery/RQ) for multi-worker scaling.
 - [ ] **Job management.** Cancel, retry, clone, tag, search, filter, bulk actions.
 - [ ] **File manager improvements.** Preview (video player), rename, download zip, retention policies.
 - [ ] **Settings UI.** Secrets management, provider selection, presets, import/export config.
@@ -227,17 +233,58 @@ wiki), `notebooks/` (Colab/Kaggle), `youtube_tracker/`, `youtube_uploader/`,
 - Storybook for dashboard components
 
 ### Quality & Ops
-- Unit/integration/E2E test suites
+- [x] Unit/integration/E2E test suites (29 passing tests in `tests/`)
+- [x] CI/CD multi-Python matrix testing (`.github/workflows/ci.yml`)
+- [x] Health & readiness probes for monitoring / k8s (`/api/health`, `/api/health/ready` in `web/api/routes/system.py`)
+- [x] Startup orphan job reconciliation on server crash/restart (`web/api/store.py`)
 - Load testing for worker queue
 - Backup/restore for job store
 - Rate limiting & abuse protection
 - Audit log
-- Health/readiness probes for k8s
 - Graceful shutdown (already partial)
 
 ---
 
-## 7. Non-Functional Requirements
+## 7. Competitive Parity & Market Benchmark Roadmap
+
+> Benchmarked against open-source peers (**`FujiwaraChoki/supoclip`**, **`GrepCut/OpenClipper`**) and 22 commercial market leaders (**Opus Clip, Klap, 2short.ai, Dumme, Munch, Qlip, Spikes Studio, Vidyo.ai, Vizard AI, Ssemble, Veed.io, Submagic, Zubtitle, Wisecut, LiveLink, SendShort, Short.ai, Nexus Clips, Wayin, ClipGoat, CutLabs, Exemplary AI**).
+
+### 7.1 Clipit Core Moats (Where Clipit Wins)
+- **100% Unmetered & Self-Hostable:** Zero per-minute credit limits, zero subscription paywalls, 100% local data privacy.
+- **Advanced Spatial Reframing:** Hybrid focus/zoom, dynamic split-screen (Pyannote 3.1 + MediaPipe/YOLO dual-face tracking), and speaker-aware camera switching.
+- **Native ASS Subtitle Synthesis:** Hardware-accelerated libass FFmpeg rendering bypassing headless Chromium/Canvas bottlenecks.
+- **Dual Headless & Web Execution:** CLI for headless batch processing alongside modern React 19 + FastAPI Web Studio.
+
+### 7.2 Competitive Feature Parity Workstreams
+
+#### A. Kinetic Typography & Audio-Visual Polish (Submagic & Opus Clip Benchmark)
+- [ ] **Transcript Semantic Emoji Engine:** Detect keywords in transcript (e.g. "money", "rocket", "shock", "warning") and auto-composite contextual animated emojis into the ASS subtitle stream.
+- [ ] **Dynamic Sound Effects (SFX) Compositing:** Auto-layer whooshes, pops, risers, and impact sound effects on hook transitions and punchlines.
+- [ ] **Auto-Highlight Keyword Coloring:** Multi-palette color highlights driven by LLM emphasis markers.
+
+#### B. Smart Trimming & Retention Engineering (Wisecut & Opus Clip Benchmark)
+- [ ] **Automated Silence & Dead-Air Removal (Jump-Cutter):** Pre-pass audio VAD / FFmpeg `silencedetect` to auto-splice pauses and filler words before LLM segmentation.
+- [ ] **Scene-Cut Auto-Snapping:** Detect natural camera transitions (`select='gt(scene,0.4)'`) and snap clip boundaries to clean scene changes.
+
+#### C. Interactive Web Studio Experience (Veed.io, Vizard AI & Opus Clip Benchmark)
+- [ ] **Interactive Waveform Trimmer:** Browser-based visual waveform trimming (`wavesurfer.js`) in the React 19 dashboard for non-destructive pre-render adjustment.
+- [ ] **Transcript Text-Based Video Editor:** Interactive text editor allowing users to click/delete words to slice corresponding video frames.
+- [ ] **Side-by-Side Multi-Layout Previewer:** Real-time aspect ratio comparison (9:16 vs 1:1 vs 16:9).
+
+#### D. Multi-Platform Publishing & Scheduling (Munch, Short.ai & SendShort Benchmark)
+- [ ] **Native OAuth Multi-Platform Publishing:** Direct scheduled publishing to TikTok Content Posting API, YouTube Shorts API, and Instagram Reels Graph API.
+- [ ] **Automated Social Copy Customization:** Platform-specific character count and hashtag limit enforcement per destination channel.
+
+#### E. Distributed Infrastructure & Scaling (SupoClip & Enterprise Benchmark)
+- [ ] **Decoupled Task Broker:** Transition in-process `ThreadPoolExecutor` to Redis-backed ARQ/Celery worker pool for horizontal scaling across multi-GPU nodes.
+- [ ] **Serverless GPU Offload:** Optional runner backend targeting Modal / RunPod / Replicate for zero-local-hardware deployments.
+
+#### F. Gaming & Streaming Highlights (Nexus Clips, Spikes Studio & CutLabs Benchmark)
+- [ ] **Streamer & Esports Highlight Detector:** Twitch API / VOD markers integration to detect chat velocity spikes, audio volume peaks, and high-intensity gameplay moments.
+
+---
+
+## 8. Non-Functional Requirements
 
 - **Performance:** 10-min video → 5 clips in < 15 min on mid-tier GPU.
 - **Reliability:** 99% job success rate; automatic retry of transient failures.
@@ -249,7 +296,7 @@ wiki), `notebooks/` (Colab/Kaggle), `youtube_tracker/`, `youtube_uploader/`,
 
 ---
 
-## 8. Success Metrics
+## 9. Success Metrics
 
 - Clip render success rate ≥ 99%
 - Median processing time per minute of source ≤ 90s (GPU)
@@ -260,7 +307,7 @@ wiki), `notebooks/` (Colab/Kaggle), `youtube_tracker/`, `youtube_uploader/`,
 
 ---
 
-## 9. Risks & Mitigations
+## 10. Risks & Mitigations
 
 | Risk | Mitigation |
 |---|---|
@@ -273,7 +320,7 @@ wiki), `notebooks/` (Colab/Kaggle), `youtube_tracker/`, `youtube_uploader/`,
 
 ---
 
-## 10. Contribution & Release Process
+## 11. Contribution & Release Process
 
 - Branch from `main`; conventional commits.
 - PR requires: lint + typecheck + tests green.
@@ -283,7 +330,7 @@ wiki), `notebooks/` (Colab/Kaggle), `youtube_tracker/`, `youtube_uploader/`,
 
 ---
 
-## 11. Appendix — CLI Flag Groups
+## 12. Appendix — CLI Flag Groups
 
 - Source & input: `--url`, `--source`, `--yt-cookies`, `--skip-download`, `--reuse`
 - Output: `--clips`, `--ratio`, `--outputs-dir`, `--cleanup-source`
