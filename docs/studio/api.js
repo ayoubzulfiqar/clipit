@@ -6,7 +6,7 @@
  */
 
 const StudioAPI = (() => {
-  const STORAGE_KEY = 'osc_backend_url';
+  const STORAGE_KEY = 'clipit_backend_url';
 
   /** Get the saved backend URL */
   function getBackendUrl() {
