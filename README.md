@@ -62,6 +62,8 @@
 
 ## 📋 Prerequisites
 
+📖 **Full usage guide:** [Usage.md](Usage.md)
+
 - **Python** 3.10+
 - **FFmpeg** installed and available in PATH
 - **CUDA GPU** recommended (for Whisper; CPU fallback available)
