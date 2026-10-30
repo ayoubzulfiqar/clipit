@@ -72,7 +72,7 @@ def _get_cv2_interpolation(cfg=None):
         OpenCV interpolation constant.
     """
     algo = str(
-        getattr(cfg, "video_scale_algo", os.environ.get("OSC_VIDEO_SCALE_ALGO", "lanczos"))
+        getattr(cfg, "video_scale_algo", os.environ.get("CLIPIT_VIDEO_SCALE_ALGO", "lanczos"))
     ).lower()
     mapping = {
         "lanczos": cv2.INTER_LANCZOS4,
