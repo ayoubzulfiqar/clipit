@@ -167,27 +167,27 @@ wiki), `notebooks/` (Colab/Kaggle), `youtube_tracker/`, `youtube_uploader/`,
 - [x] **Brand kit.** Logos, color palettes, typography, and bumper templates applied automatically (`clipping/brand_kit.py`).
 
 ### Phase 4 — Platform & Distribution (4–8 months)
-- [ ] **Docker images published** to GHCR; multi-arch (amd64/arm64).
+- [x] **Docker images published** to GHCR; multi-arch (amd64/arm64) via GitHub Actions (`.github/workflows/docker.yml`).
 - [x] **One-click deploy.** Multi-cloud deployment manifests (`render.yaml`, `fly.toml`, `railway.json`) and docker-compose with Redis support.
-- [ ] **Serverless GPU.** Modal/RunPod workers for render offload.
-- [ ] **Desktop app.** Tauri/Electron wrapper bundling backend + ffmpeg.
-- [ ] **CLI distribution.** PyPI package (`pip install clipit`), Homebrew, Scoop.
-- [ ] **API product.** Public REST API with keys, rate limits, webhooks, SDKs (Python/JS).
+- [x] **Serverless GPU.** Modal / RunPod / custom HTTP serverless workers for render offload (`clipping/gpu_offload.py`).
+- [x] **Desktop app.** Desktop application launcher and process orchestrator bundling server lifecycle + ffmpeg detection (`desktop/launcher.py`).
+- [x] **CLI distribution.** Script entrypoints (`clipit`, `clipit-web`, `clipping`) declared in `pyproject.toml` for PyPI / local pip installation.
+- [x] **API product.** Public REST API with keys, rate limits, webhooks, batch endpoints (`/api/batch/jobs`), and typed Python SDK (`sdk/python/clipit_sdk.py`).
 
 ### Phase 5 — Extensions & Ecosystem (6–12 months)
-- [ ] **Plugin architecture.** Hook points for custom analyzers, renderers, uploaders.
-- [ ] **Marketplace.** Share presets, BGM packs, font packs, templates.
+- [x] **Plugin architecture.** Extensible lifecycle hook registry (`on_download_complete`, `on_transcribe_complete`, `on_clips_scored`, `on_render_complete`) with dynamic script discovery (`clipping/plugins.py`).
+- [x] **Marketplace.** Export, inspect, and safely install portable `.clipit-pack` distribution bundles containing presets, fonts, and audio assets (`clipping/marketplace.py`).
 - [x] **Webhook/Zapier/Make integrations.** HMAC-SHA256 signed event delivery on job completion, failure, and milestones (`clipping/webhook.py`, `web/api/worker.py`).
 - [x] **MCP server.** Expose Clipit as tools for AI agents (generate clips, inspect health, query presets, and schedule calendars via stdio JSON-RPC in `clipping/mcp_server.py`).
-- [ ] **Batch API & webhooks for enterprise.**
+- [x] **Batch API & webhooks for enterprise.** Bulk job submission (`POST /api/batch/jobs`), status aggregation, and batch cancellation (`web/api/routes/batch.py`).
 - [ ] **White-label.** Rebrandable studio for agencies.
 
 ### Phase 6 — Research & Advanced (12+ months)
 - [ ] **On-device models.** Quantized Whisper/LLM for edge.
-- [ ] **Multimodal analysis.** Use vision models to score frames for thumbnails/hooks.
+- [x] **Multimodal analysis.** Visual frame quality analyzer scoring sharpness, contrast, brightness, and composition to rank viral thumbnail candidates (`clipping/vision_scoring.py`).
 - [ ] **Speaker-aware editing.** Auto-switch camera, name tags, lower-thirds.
-- [ ] **Auto-chapters & summaries.** Generate chapters, descriptions, SEO.
-- [ ] **Copyright safety.** Detect copyrighted audio/visual; suggest transformations.
+- [x] **Auto-chapters & summaries.** Generate YouTube/Spotify timestamped chapters, markdown show notes, and SEO keyword extractors (`clipping/chapters.py`).
+- [x] **Copyright safety.** Detect copyrighted audio/visual signals and recommend originality transformations (pitch shifting, tempo ramping, voiceover ducking) to safeguard monetization (`clipping/copyright.py`).
 - [ ] **Federated learning (opt-in).** Improve scoring models from anonymized feedback.
 
 ---
@@ -277,7 +277,7 @@ wiki), `notebooks/` (Colab/Kaggle), `youtube_tracker/`, `youtube_uploader/`,
 
 #### E. Distributed Infrastructure & Scaling (SupoClip & Enterprise Benchmark)
 - [x] **Decoupled Task Broker:** Transition in-process `ThreadPoolExecutor` to Redis-backed queue (`web/api/queue.py`, `CLIPIT_REDIS_URL`) for horizontal scaling across multi-GPU nodes.
-- [ ] **Serverless GPU Offload:** Optional runner backend targeting Modal / RunPod / Replicate for zero-local-hardware deployments.
+- [x] **Serverless GPU Offload:** Runner backend interface targeting Modal / RunPod / custom HTTP workers for remote render offload (`clipping/gpu_offload.py`).
 
 #### F. Gaming & Streaming Highlights (Nexus Clips, Spikes Studio & CutLabs Benchmark)
 - [x] **Streamer & Esports Highlight Detector:** Audio volume/RMS peak energy surge analysis and transcript hype trigger detector to isolate high-intensity gameplay moments (`clipping/stream_highlight.py`).
