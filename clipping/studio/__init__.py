@@ -37,6 +37,12 @@ from .audio_bgm import (
     build_bgm_filter,
     build_audio_loudnorm_filter,
 )
+from .sfx import (
+    get_local_sfx_file,
+    build_sfx_mix_filter,
+    get_synthetic_sfx_eval,
+    generate_synthetic_sfx_file,
+)
 from .presets import (
     PLATFORM_PRESETS,
     get_platform_preset,
@@ -107,6 +113,10 @@ __all__ = [
     "get_local_bgm_file",
     "build_bgm_filter",
     "build_audio_loudnorm_filter",
+    "get_local_sfx_file",
+    "build_sfx_mix_filter",
+    "get_synthetic_sfx_eval",
+    "generate_synthetic_sfx_file",
     "PLATFORM_PRESETS",
     "get_platform_preset",
     "PlatformPreset",
