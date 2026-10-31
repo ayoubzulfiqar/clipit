@@ -166,11 +166,54 @@ class JobResponse(BaseModel):
     clips: list[ClipDetail] = Field(default_factory=list)
     error: Optional[str] = None
     log: list[str] = Field(default_factory=list)
+    tags: list[str] = Field(default_factory=list)
 
 
 class JobListResponse(BaseModel):
     """Paginated job list."""
     jobs: list[JobResponse]
+    total: int
+
+
+class JobTagsRequest(BaseModel):
+    """Payload to update tags on a job."""
+    tags: list[str] = Field(default_factory=list)
+
+
+class JobCloneRequest(BaseModel):
+    """Payload to clone a job with optional config overrides."""
+    config_overrides: Optional[dict] = Field(default_factory=dict)
+
+
+class JobBulkActionRequest(BaseModel):
+    """Payload to perform bulk action across multiple jobs."""
+    action: str = Field(..., description="Action to perform: 'cancel', 'retry', or 'delete'")
+    job_ids: list[str] = Field(..., min_length=1)
+
+
+# ---------------------------------------------------------------------------
+# Presets
+# ---------------------------------------------------------------------------
+
+class PresetCreateRequest(BaseModel):
+    """Payload to create or update a named preset."""
+    name: str = Field(..., min_length=1, max_length=50)
+    description: Optional[str] = Field("", max_length=200)
+    config: dict = Field(..., description="Clipit configuration dictionary")
+
+
+class PresetResponse(BaseModel):
+    """Single preset profile."""
+    name: str
+    description: str = ""
+    config: dict
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+
+class PresetListResponse(BaseModel):
+    """List of presets."""
+    presets: list[PresetResponse]
     total: int
 
 
