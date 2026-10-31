@@ -38,18 +38,36 @@ def run_pipeline(cfg, whisper_model_instance=None) -> list[dict]:
 
     # Step 1 — Download
     source_platform = getattr(cfg, "source_platform", "youtube")
-    engine.download_video(
-        cfg.url_youtube,
-        cfg.file_video_asli,
-        getattr(cfg, "use_dlp_subs", False),
-        getattr(cfg, "download_source_height", "max"),
-        source_platform=source_platform,
-        yt_cookies=getattr(cfg, "yt_cookies", None),
-    )
+    resume_enabled = getattr(cfg, "resume", True)
+
+    if resume_enabled and os.path.exists(cfg.file_video_asli) and os.path.getsize(cfg.file_video_asli) > 1024:
+        print(f"🔄 [1/7] Source video ditemukan di disk ({cfg.file_video_asli}), melewati proses download.")
+    else:
+        engine.download_video(
+            cfg.url_youtube,
+            cfg.file_video_asli,
+            getattr(cfg, "use_dlp_subs", False),
+            getattr(cfg, "download_source_height", "max"),
+            source_platform=source_platform,
+            yt_cookies=getattr(cfg, "yt_cookies", None),
+        )
 
     # Step 2 — Transcribe
     transkrip_lengkap = ""
     data_segmen = []
+    transcription_cache_path = os.path.join(cfg.outputs_dir, "transcription_cache.json")
+
+    # Checkpoint: load cached transcription if available
+    if resume_enabled and os.path.exists(transcription_cache_path):
+        try:
+            with open(transcription_cache_path, "r", encoding="utf-8") as f:
+                cached_data = json.load(f)
+                transkrip_lengkap = cached_data.get("transkrip_lengkap", "")
+                data_segmen = cached_data.get("data_segmen", [])
+            if transkrip_lengkap and data_segmen:
+                print(f"🔄 [2/7] Memuat transkripsi dari cache ({transcription_cache_path}), melewati proses Whisper.")
+        except Exception as e:
+            print(f"⚠️ Gagal membaca transcription_cache.json ({e}), melanjutkan transkripsi normal.")
 
     import glob
 
@@ -58,35 +76,47 @@ def run_pipeline(cfg, whisper_model_instance=None) -> list[dict]:
     file_json3 = json3_files[0] if json3_files else None
 
     # Only run YouTube JSON3 subtitle search for YouTube sources
-    if source_platform == "youtube":
-        if (
-            getattr(cfg, "use_dlp_subs", False)
-            and file_json3
-            and os.path.exists(file_json3)
-        ):
-            transkrip_lengkap, data_segmen = engine.parse_youtube_json3_subs(
-                file_json3, max_words_per_subtitle=cfg.max_kata_per_subtitle
-            )
-            if transkrip_lengkap and data_segmen:
-                print(
-                    f"✅ Berhasil memparsing subtitle dari YouTube ({os.path.basename(file_json3)}), melewati proses Whisper."
+    if not transkrip_lengkap or not data_segmen:
+        if source_platform == "youtube":
+            if (
+                getattr(cfg, "use_dlp_subs", False)
+                and file_json3
+                and os.path.exists(file_json3)
+            ):
+                transkrip_lengkap, data_segmen = engine.parse_youtube_json3_subs(
+                    file_json3, max_words_per_subtitle=cfg.max_kata_per_subtitle
                 )
+                if transkrip_lengkap and data_segmen:
+                    print(
+                        f"✅ Berhasil memparsing subtitle dari YouTube ({os.path.basename(file_json3)}), melewati proses Whisper."
+                    )
 
     if not transkrip_lengkap or not data_segmen:
         transkrip_lengkap, data_segmen = engine.transcribe_video(
             cfg.file_video_asli,
-            max_words_per_subtitle=cfg.max_kata_per_subtitle,
-            model_size=cfg.whisper_model,
-            device=cfg.whisper_device,
-            compute_type=cfg.whisper_compute_type,
+            max_words_per_subtitle=getattr(cfg, "max_kata_per_subtitle", 4),
+            model_size=getattr(cfg, "whisper_model", "large-v3"),
+            device=getattr(cfg, "whisper_device", "cuda"),
+            compute_type=getattr(cfg, "whisper_compute_type", "float16"),
             whisper_model_instance=whisper_model_instance,
         )
+        # Checkpoint: save transcription cache
+        try:
+            with open(transcription_cache_path, "w", encoding="utf-8") as f:
+                json.dump(
+                    {"transkrip_lengkap": transkrip_lengkap, "data_segmen": data_segmen},
+                    f,
+                    ensure_ascii=False,
+                    indent=2,
+                )
+        except Exception as e:
+            print(f"⚠️ Gagal menyimpan transcription_cache.json: {e}")
 
     # Step 3 — Gemini AI analysis
     gemini_output_path = os.path.join(cfg.outputs_dir, "gemini_response.json")
     
-    if getattr(cfg, "load_gemini_json", False) and os.path.exists(gemini_output_path):
-        print(f"\n🔄 [3/3] Memuat data AI ({cfg.ai_provider}) dari file lokal: {gemini_output_path}")
+    if (resume_enabled or getattr(cfg, "load_gemini_json", False)) and os.path.exists(gemini_output_path):
+        print(f"\n🔄 [3/7] Memuat data AI ({cfg.ai_provider}) dari file lokal: {gemini_output_path}")
         with open(gemini_output_path, "r", encoding="utf-8") as f:
             hasil_json = json.load(f)
     else:
@@ -235,8 +265,28 @@ def run_pipeline(cfg, whisper_model_instance=None) -> list[dict]:
             except Exception as e:
                 print(f"   ⚠️ Gagal generate voice-over untuk Rank {klip['rank']}: {e}")
 
+    manifest_path = os.path.join(cfg.outputs_dir, "render_manifest.json")
+    old_manifest_map = {}
+    if resume_enabled and os.path.exists(manifest_path):
+        try:
+            with open(manifest_path, "r", encoding="utf-8") as f:
+                for entry in json.load(f):
+                    if isinstance(entry, dict) and "rank" in entry:
+                        old_manifest_map[entry["rank"]] = entry
+        except Exception:
+            pass
+
     for klip in sorted(hasil_json, key=lambda x: x["rank"]):
-        
+        rank = klip["rank"]
+        # Checkpoint: reuse existing clip if already rendered
+        if resume_enabled and rank in old_manifest_map:
+            cached_clip = old_manifest_map[rank]
+            clip_file = cached_clip.get("output_file") or cached_clip.get("video_path")
+            if clip_file and os.path.exists(clip_file) and os.path.getsize(clip_file) > 1024:
+                print(f"🔄 [6/7] Klip Rank {rank} sudah ada di disk ({clip_file}), melewati render.")
+                render_manifest.append(cached_clip)
+                continue
+
         if custom_hook_path:
             klip["custom_hook_info"] = {"file_path": custom_hook_path}
 
