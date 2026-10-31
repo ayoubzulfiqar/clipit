@@ -307,6 +307,11 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Target platform preset (auto-configures aspect ratio and UI safe zones).",
     )
     p.add_argument(
+        "--outputs-dir",
+        default=None,
+        help="Custom output directory for rendered clips, previews, and metadata.",
+    )
+    p.add_argument(
         "--source-height",
         type=_parse_download_height,
         default=DOWNLOAD_SOURCE_HEIGHT,
@@ -361,6 +366,18 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         default=False,
         help="Auto-delete the downloaded source video after rendering to save disk space (useful for batch runs).",
+    )
+    p.add_argument(
+        "--dry-run",
+        action="store_true",
+        default=False,
+        help="Perform download, transcription, AI analysis, and generate manifest without rendering video clips.",
+    )
+    p.add_argument(
+        "--seed",
+        type=int,
+        default=None,
+        help="Random seed for reproducible renders, BGM selection, and transitions.",
     )
     p.add_argument("--no-bgm", action="store_true", help="Disable background music")
     p.add_argument(
@@ -974,7 +991,7 @@ def build_config(argv: list[str] | None = None) -> SimpleNamespace:
                 )
 
     base_dir = os.getcwd()
-    outputs_dir = os.path.abspath(os.path.join(base_dir, "outputs"))
+    outputs_dir = os.path.abspath(args.outputs_dir) if getattr(args, "outputs_dir", None) else os.path.abspath(os.path.join(base_dir, "outputs"))
     os.makedirs(outputs_dir, exist_ok=True)
     font_dir = os.path.abspath(os.path.join(base_dir, "custom_fonts"))
     os.makedirs(font_dir, exist_ok=True)
@@ -1008,6 +1025,8 @@ def build_config(argv: list[str] | None = None) -> SimpleNamespace:
         url_list=url_list,
         yt_cookies=args.yt_cookies,
         cleanup_source=args.cleanup_source,
+        dry_run=args.dry_run,
+        seed=args.seed,
         jumlah_clip=args.clips,
         resume=args.resume,
         platform=args.platform,
