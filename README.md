@@ -1,16 +1,38 @@
 <br />
 <div align="center">
   <a href="https://github.com/ayoubzulfiqar/clipit">
-    <img src="assets/images/clipit-logo-8x.png" alt="Logo" width="350">
+    <img src="assets/images/clipit-logo-8x.png" alt="Clipit Logo" width="360">
   </a>
 
-  <h3 align="center">Clipit</h3>
+  <h1 align="center">Clipit</h1>
 
   <p align="center">
-    <strong>Ultimate AI Auto-Clipper & Teaser Generator</strong><br>
-    An open-source content factory that transforms long-form videos into cinematic short-form highlights with hook teasers, karaoke subtitles, and auto-thumbnails.
-    <br />
-    <br />
+    <strong>Open-Source, Unmetered AI Auto-Clipper & Viral Short-Form Video Factory</strong><br>
+    Transform long-form videos (podcasts, streams, interviews, and lectures) into cinematic short-form clips with kinetic karaoke subtitles, face-tracking reframing, dynamic split-screen, SFX compositing, and auto-thumbnails.
+  </p>
+
+  <p align="center">
+    <a href="https://github.com/ayoubzulfiqar/clipit/actions/workflows/ci.yml">
+      <img src="https://img.shields.io/github/actions/workflow/status/ayoubzulfiqar/clipit/ci.yml?branch=main&label=CI%20Tests&logo=github" alt="CI Status">
+    </a>
+    <a href="https://github.com/ayoubzulfiqar/clipit/actions/workflows/docker.yml">
+      <img src="https://img.shields.io/github/actions/workflow/status/ayoubzulfiqar/clipit/docker.yml?branch=main&label=Docker%20GHCR&logo=docker" alt="Docker Build">
+    </a>
+    <a href="https://github.com/ayoubzulfiqar/clipit/releases">
+      <img src="https://img.shields.io/badge/version-1.15.0-blue.svg" alt="Version">
+    </a>
+    <a href="LICENSE">
+      <img src="https://img.shields.io/badge/license-AGPL--3.0-purple.svg" alt="License: AGPL-3.0">
+    </a>
+    <a href="ACCESSIBILITY.md">
+      <img src="https://img.shields.io/badge/a11y-WCAG%202.1%20AA-success.svg" alt="WCAG 2.1 AA">
+    </a>
+    <a href="https://python.org">
+      <img src="https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg?logo=python" alt="Python 3.10+">
+    </a>
+  </p>
+
+  <p align="center">
     <a href="README.md">🇬🇧 English</a>
     &middot;
     <a href="README_AR.md">🇸🇦 العربية</a>
@@ -21,715 +43,296 @@
     &middot;
     <a href="README_KO.md">🇰🇷 한국어</a>
     &middot;
-    <a href="https://github.com/ayoubzulfiqar/clipit/issues/new">Report Bug</a>
-    &middot;
-    <a href="https://github.com/ayoubzulfiqar/clipit/issues/new">Request Feature</a>
+    <a href="Usage.md">📖 Complete Usage Manual</a>
   </p>
 </div>
 
 ---
 
-🟢 **Actively Maintained**: contributions, bug reports, and feature PRs are welcome.
+## ⚡ Why Clipit?
+
+Unlike proprietary SaaS tools that charge per-minute fees, enforce monthly credit quotas, and upload your raw media to third-party clouds, **Clipit is 100% unmetered, self-hostable, and runs locally on your own hardware or private cloud**:
+
+- 🎬 **Unmetered & Free Forever**: Zero subscription tiers, zero watermarks forced on your exports, zero per-minute credit limits.
+- 🎯 **Advanced Spatial Framing**: Real-time face-tracking via **MediaPipe** or **YOLO**, hybrid zoom, and active-speaker dynamic split-screen (**Pyannote 3.1**).
+- ⚡ **Native Hardware Subtitle Burning**: Hardware-accelerated `.ASS` subtitles via FFmpeg `libass`—bypassing slow headless Chromium canvas bottlenecks.
+- 🎨 **Kinetic Typography & Emojis**: Word-by-word Alex Hormozi/Veed-style kinetic karaoke highlights, semantic transcript-driven animated emojis, and contextual keyword coloring.
+- 🔊 **Broadcast Audio Mastering & SFX**: Synthesize punchy whooshes, risers, and impact SFX on viral hook cuts, with automated EBU R128 (-14 LUFS) loudness normalization and BGM sidechain ducking.
+- 🖥️ **Dual CLI & Web Studio GUI**: Powerful batch CLI alongside a responsive **FastAPI + React 19** Web Studio with dark/light theme, interactive transcript seeking, and multi-layout aspect previewers.
+- 🤖 **AI Agent Native (MCP)**: First-class Model Context Protocol (MCP) server exposing clipping, preset management, and social release scheduling to Claude, Cursor, and AI agents.
+- 🏢 **Enterprise Distributed Architecture**: Horizontal worker scaling via Redis task brokers, HMAC-SHA256 signed webhooks, batch API (`/api/batch/jobs`), and pluggable lifecycle hooks.
 
 ---
 
-## ✨ Features
+## 📑 Table of Contents
 
-| Feature | Description |
-|---|---|
-| **AI Transcriber** | Word-level transcription using **Faster-Whisper** (large-v3) |
-| **AI Content Curator** | **Google Gemini** analyzes context, picks the most viral moments, and generates metadata |
-| **Smart Auto-Framing** | Face-tracking via **[MediaPipe BlazeFace (Full-Range)](https://ai.google.dev/edge/mediapipe/solutions/vision/face_detector)** with Smooth Pan, Deadzone & anti-jitter algorithms |
-| **Cinematic Teaser Hook** | 3-second hook with dark overlay, cinematic bars, and **TV Glitch** transition |
-| **Karaoke Subtitles** | Word-by-word highlighted `.ASS` subtitles (Alex Hormozi / Veed style) |
-| **Kinetic Typography** | AI-driven word emphasis with bounce/stagger animations & dual-font system |
-| **B-Roll Integration** | Auto-fetches contextual stock footage from **Pexels** with crossfade & Ken Burns (Supports Hybrid, Split-Screen & Camera-Switch) |
-| **Multi-Hook Intro (V2)** | Creates high-retention 3-4 micro-hook intros with flash/glitch transitions |
-| **Smart Segment Trimming** | AI dynamically selects the best segments to cut out boring/silent parts |
-| **Auto-BGM & Ducking** | Local BGM asset pool (`assets/bgm/`) with 2 modes: *sidechain ducking* (BGM auto-lowers during speech) or *background* (constant low volume). MP3 files auto-loop if shorter than the video |
-| **Auto-Thumbnail** | Frame extraction with dark overlay and large title text |
-| **Watermark Engine** | Text & image watermarks with adjustable position (9 anchors), padding, opacity, and auto-scaling |
-| **Cross-Platform Metadata** | YouTube title/description/tags + TikTok caption — all in English |
-| **Auto YouTube Uploader** | Automatically upload highlight clips to YouTube with scheduling support and full metadata (optional) |
-| **Auto Facebook Reels Uploader** | Upload Reels to Facebook Pages via Meta Graph API with smart scheduling — first clip publishes immediately, subsequent clips auto-schedule at configurable intervals (optional) |
-| **Podcast Split-Screen** | Auto speaker diarization via **Pyannote** with top-bottom split-screen layout for podcasts (9:16). Supports **3+ speakers across multiple scenes** with per-speaker frozen frame fallback |
-| **Podcast Camera Switch** | Auto active-speaker detection with scene-aware switching — full 9:16 crop focuses on whoever is talking; blurred pillarbox only when speakers in the same scene talk simultaneously (9:16) |
-| **AI Voice-Over** | Converts auto-clips into original commentary/reaction videos using **Gemini** (script generation) and **edge-tts** (free text-to-speech), complete with audio ducking, text override, and ambient edge glow |
-
-> 🎬 **NEW: Story Clip Mode (`--story-mode`)**  
-> Need to assemble a narrative from multiple specific video sources (like a brand campaign)? We've just introduced the Multi-Source Story Clip Mode!  
-> 👉 **[Read the full Story Clip Documentation](docs/STORY_CLIP.md)**
-
-## 📋 Prerequisites
-
-📖 **Full usage guide:** [Usage.md](Usage.md)
-
-- **Python** 3.10+
-- **FFmpeg** installed and available in PATH
-- **CUDA GPU** recommended (for Whisper; CPU fallback available)
-- **Google Gemini API Key** ([get one here](https://aistudio.google.com/apikey))
-- **Pexels API Key** (optional, for B-roll — [get one here](https://www.pexels.com/api/))
-- **HuggingFace Token** (optional, for split-screen / camera-switch — [get one here](https://huggingface.co/settings/tokens), requires accepting [Pyannote model agreement](https://huggingface.co/pyannote/speaker-diarization-3.1))
-
-## ☁️ Running on Google Colab (Recommended)
-
-If you don't have a local GPU, the easiest way to run this pipeline is via **Google Colab**.
-Open a new Google Colab notebook, set the Runtime to **T4 GPU**, and create the following cells:
-
-**Cell 1: Setup & Clone**
-```python
-!rm -rf ./* ./.*
-!git clone https://github.com/your-username/clipit.git .
-!pip install -r requirements.txt
-```
-
-**Cell 2: Setup API Keys**
-```python
-import os
-from pathlib import Path
-from google.colab import userdata
-
-# Store your keys in Colab Secrets first!
-GOOGLE_API_KEY = userdata.get("GOOGLE_API_KEY")
-
-env_text = f"GOOGLE_API_KEY={GOOGLE_API_KEY}\n"
-Path(".env").write_text(env_text, encoding="utf-8")
-```
-
-**Cell 3: Execute (Example including Kaggle fallback for float32)**
-```python
-URL_YOUTUBE = "https://www.youtube.com/watch?v=Dc4_aBFAYWE&pp=0gcJCdkKAYcqIYzv"
-JUMLAH_CLIP = 10
-RASIO = "9:16"
-FONT_STYLE = "DEFAULT"
-GEMINI_MODEL = "gemini-3-flash-preview"
-# Use 'float32' for Kaggle CPU/T4 limitations, or 'float16' for standard Colab T4 GPUs
-WHISPER_COMPUTE_TYPE = "float32"
-
-!python main.py \
-  --url "{URL_YOUTUBE}" \
-  --clips {JUMLAH_CLIP} \
-  --ratio "{RASIO}" \
-  --font-style "{FONT_STYLE}" \
-  --hook-duration 3 \
-  --words-per-sub 5 \
-  --gemini-model "{GEMINI_MODEL}" \
-  --whisper-compute-type "{WHISPER_COMPUTE_TYPE}" \
-  --no-bgm
-```
-
-> 💡 **New to this project?** Use the **[Quick Start Notebook](notebooks/Quick_Start.ipynb)** — a beginner-friendly notebook with minimal configuration, step-by-step English instructions, and only 3 settings to change (YouTube URL, total clips, and Whisper model).
->
-> We also include `notebooks/Lib_Clipit.ipynb` as a full-featured template.
+- [Quick Start](#-quick-start)
+- [Web Studio GUI](#-web-studio-gui)
+- [Key Features](#-key-features)
+- [CLI Reference](#-cli-reference)
+- [Enterprise & Batch API](#-enterprise--batch-api)
+- [Community Template Marketplace](#-community-template-marketplace-clipit-pack)
+- [Model Context Protocol (MCP) Server](#-model-context-protocol-mcp-server)
+- [Python SDK](#-python-sdk)
+- [Docker Deployment](#-docker-deployment)
+- [Community & Governance](#-community--governance)
+- [License (GNU AGPLv3)](#-license)
 
 ---
 
-## 🎬 Web Studio (GitHub Pages + Remote GPU)
+## 🚀 Quick Start
 
-The **Clipping Studio** is a browser-based dashboard hosted for free on **GitHub Pages** that connects to a Kaggle/Colab notebook as its backend — giving you a full GUI to control the AI clipping pipeline without any local setup.
-
-**🔗 Open Studio:** [ayoubzulfiqar.github.io/clipit/studio/](https://ayoubzulfiqar.github.io/clipit/studio/)
-
-### How It Works
-
-```
-┌─────────────────────┐     HTTPS (ngrok)     ┌──────────────────────────┐
-│   GitHub Pages      │ ◄──────────────────►   │   Kaggle / Colab         │
-│   (Static Frontend) │                        │   (FastAPI + GPU)        │
-│                     │   POST /api/jobs       │                          │
-│   studio/index.html │ ────────────────────►  │   web/api/app.py         │
-│   studio/new-job    │   GET  /api/jobs/:id   │   clipping pipeline      │
-│   studio/settings   │ ◄────────────────────  │   Whisper + Gemini       │
-└─────────────────────┘                        └──────────────────────────┘
-        FREE                                           FREE (GPU)
-```
-
-### Quick Start
-
-1. **Start the backend** — Open `notebooks/Kaggle_Studio_Server.ipynb` in Kaggle (or Colab), add your API keys to Secrets, and run all cells. Copy the **Public URL** from the output.
-
-2. **Open the Studio** — Visit [the Studio page](https://ayoubzulfiqar.github.io/clipit/studio/) in your browser.
-
-3. **Connect** — Click the **Connect** button in the sidebar, paste the tunnel URL, and click **Test & Connect**.
-
-4. **Create a job** — Go to **New Job**, enter a YouTube URL, configure your clip settings, and hit **Start Clipping**. Monitor progress in real-time from the Dashboard.
-
-> **Note:** The tunnel URL changes each time the notebook restarts. The Studio saves your last URL in `localStorage` for convenience, but you'll need to update it after each new session.
-
----
-
-## 🚀 Local Quick Start
+### 1. Installation
 
 ```bash
-# 1. Clone the repo
-git clone https://github.com/your-username/clipit.git
+# Clone repository
+git clone https://github.com/ayoubzulfiqar/clipit.git
 cd clipit
 
-# 2. Install dependencies (pick one)
-pip install -r requirements.txt          # pip / Colab
-# uv sync                               # or use uv (reads pyproject.toml)
+# Set up virtual environment
+python3 -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
-# 3. Set up API keys
+# Install dependencies
+pip install --upgrade pip
+pip install -e ".[all]"
+
+# Configure API key
 cp .env.sample .env
-# Edit .env and add your GOOGLE_API_KEY
-
-# 4. Run (Must include --url)
-python main.py --url "https://youtube.com/watch?v=VIDEO_ID"
-# 5. Examples of Execution
-
-# Standard run (Default options with 5 clips)
-python main.py --url "https://youtube.com/watch?v=VIDEO_ID" --clips 5 --ratio 16:9
-
-# Using YouTube Cookies (To avoid 403 Forbidden / bot detection errors)
-python main.py --url "https://youtube.com/watch?v=VIDEO_ID" --yt-cookies chrome
-# or using an exported cookies.txt file
-python main.py --url "https://youtube.com/watch?v=VIDEO_ID" --yt-cookies youtube_cookies.txt
-
-# Batch Processing (Multi-URL) & Cleanup Source
-# Process multiple videos sequentially and auto-delete original videos after rendering
-python main.py --url "https://youtube.com/watch?v=ID1" "https://youtube.com/watch?v=ID2" --clips 3 --ratio 9:16 --cleanup-source
-
-# Prefer highest available source quality (default behavior)
-python main.py --url "https://youtube.com/watch?v=VIDEO_ID" --source-height max
-
-# Cap source download to 1440p (2K)
-python main.py --url "https://youtube.com/watch?v=VIDEO_ID" --source-height 1440
-
-# Sharper output tuning (works for normal and dynamic-split modes)
-python main.py --url "https://youtube.com/watch?v=VIDEO_ID" \
-  --source-height 2160 \
-  --video-cq 19 \
-  --video-crf 17 \
-  --video-preset slow \
-  --video-scale-algo lanczos
-
-# Advanced run (Using YOLOv8 GPU Face Tracking & Custom Fonts)
-python main.py --url "https://youtube.com/watch?v=VIDEO_ID" \
-  --clips 7 \
-  --face-detector yolo \
-  --yolo-size 8m \
-  --font-style STORYTELLER
-
-# Podcast Split-Screen (2 speakers, 9:16)
-python main.py --url "https://youtube.com/watch?v=PODCAST_ID" \
-  --clips 3 \
-  --ratio "9:16" \
-  --split-screen
-
-# Podcast Camera Switch (auto-switches to active speaker, blurred pillarbox on overlap)
-python main.py --url "https://youtube.com/watch?v=PODCAST_ID" \
-  --clips 3 \
-  --ratio "9:16" \
-  --camera-switch \
-  --switch-hold-duration 2.0 \
-  --switch-blend-duration 0.0
-
-# Multi-Speaker Podcast (3 speakers across 2 scenes)
-python main.py --url "https://youtube.com/watch?v=PODCAST_ID" \
-  --clips 3 \
-  --ratio "9:16" \
-  --camera-switch \
-  --diarization-speakers 3
-
-# Manual Custom Hook (using external .mp4 clip)
-python main.py --url "VIDEO_URL" --hook-source "DRIVE_URL_OR_PATH" --hook-source-start 5.0 --hook-duration 4
-
-# Ultra-HD 2K Rendering (Fetch 1440p and render at native 1440p vertical resolution with sharpening)
-python main.py --url "VIDEO_URL" --source-height 1440 --render-height source --video-sharpen
-
-# Use NVIDIA NIM (DeepSeek-V3) instead of Gemini
-python main.py --url "VIDEO_URL" --ai-provider nvidia --nvidia-model "deepseek-ai/deepseek-v4-pro"
-
-# Square output for Instagram Feed (1:1)
-python main.py --url "VIDEO_URL" --ratio "1:1" --clips 5
-
-# Instagram/Facebook portrait (4:5)
-python main.py --url "VIDEO_URL" --ratio "4:5" --clips 5
-
-# Classic portrait (3:4)
-python main.py --url "VIDEO_URL" --ratio "3:4" --clips 5
-
-# TikTok source
-python main.py --url "https://www.tiktok.com/@username/video/1234567890" --source tiktok --clips 3
-
-# Instagram source
-python main.py --url "https://www.instagram.com/reel/123456789/" --source instagram --clips 3
-
-# Google Drive source
-python main.py --url "https://drive.google.com/file/d/1234567890/view" --source gdrive --clips 3
+# Add your free Gemini API key to .env: GOOGLE_API_KEY=your_key_here
 ```
 
-## ⚙️ CLI Options
-
-```
-python main.py --help
-```
-
-| Argument | Default | Description |
-|---|---|---|
-| `--url`, `-u` | — | Video URL to process (Required) |
-| `--yt-cookies` | `None` | Cookies from browser (e.g. `chrome`) or path to `cookies.txt` to avoid yt-dlp blocks |
-| `--source` | `youtube` | Video source platform. Choices: `youtube`, `tiktok`, `instagram`, `gdrive`. |
-| `--clips`, `-n` | `7` | Number of highlight clips to generate |
-| `--ratio`, `-r` | `9:16` | Output aspect ratio (`9:16`, `16:9`, `1:1`, `3:4`, `4:5`) |
-| `--source-height` | `max` | Preferred source download max height (`max`, `1080`, `1440`, `2160`, etc.) |
-| `--ai-provider` | `gemini` | AI provider for analysis (`gemini` or `nvidia`). |
-| `--nvidia-model` | `deepseek...` | Model name for NVIDIA NIM API (e.g. `deepseek-ai/deepseek-v3`). |
-| `--render-height` | `1080` | Target render output height (`1080`, `1440`, `2160`, `source`) |
-| `--video-bitrate` | `auto` | Target video bitrate (e.g. 8M, 12M, auto). 'auto' scales based on resolution. |
-| `--video-sharpen` | — | Apply a subtle sharpening filter for clearer output. |
-| `--video-cq` | `23` | NVENC CQ quality target (lower is sharper). [Range: 15-20 (Ultra Sharp), 21-25 (Standard), 26-50 (Blurry)] |
-| `--video-crf` | `20` | libx264 CRF quality target (lower is sharper). [Range: 15-20 (Ultra Sharp), 21-25 (Standard), 26-50 (Blurry)] |
-| `--video-preset` | `auto` | Encoder preset override (NVENC: `p1`-`p7`, x264: `ultrafast`-`veryslow`). Use `auto` for default. |
-| `--video-scale-algo` | `lanczos` | Resize algorithm for render (`lanczos`: sharp, `bicubic`: balanced, `area`/`bilinear`: fast/blurry) |
-| `--words-per-sub` | `5` | Max words per karaoke subtitle group |
-| `--hook-duration` | `3` | Hook teaser duration (seconds) |
-| `--font-style` | `HORMOZI` | Font preset (`DEFAULT`, `STORYTELLER`, `HORMOZI`, `CINEMATIC`) |
-| `--no-broll` | — | Disable B-roll footage |
-| `--no-hook` | — | Disable hook glitch teaser |
-| `--hook-source` | `None` | Google Drive URL or local path for a single custom hook video (.mp4) |
-| `--hook-source-start` | `0.0` | Start time in seconds for the custom hook video |
-| `--no-bgm` | — | Disable background music |
-| `--bgm-mode` | `ducking` | BGM mixing mode: `ducking` (sidechain compress — BGM auto-lowers during speech) or `background` (constant low volume mix) |
-| `--edge-glow` | `False` | Apply ambient edge glow to the entire output video (hook, clip, broll, voiceover). By default, glow only appears on voice-over intros. |
-| `--edge-glow-mode` | `smooth` | Edge glow rendering strategy: `default` (original 10s loop, may stutter at loop points), `smooth` (10s loop with auto-adjusted speed for seamless loop), `full` (renders full duration, heavier but zero stutter). |
-| `--watermark` | `False` | Enable watermark overlay on rendered clips |
-| `--text` | `None` | Watermark text to overlay (e.g. 'Channel Name') |
-| `--image` | `None` | Path to watermark image (PNG with alpha recommended, also supports JPG, JPEG, WEBP) |
-| `--opacity` | `70` | Watermark opacity in percent (1-100) |
-| `--position` | `center-right`| Watermark position (9 anchors: `top-left`, `center-right`, etc.) |
-| `--padding` | `0` | Watermark padding from the nearest edge in pixels |
-| `--watermark-font-size` | `0` | Watermark font size in pixels (0 = auto ~3% frame height) |
-| `--watermark-scale` | `15` | Watermark image height as % of frame height (1-100) |
-| `--no-subs` | — | Disable all subtitle rendering |
-| `--no-karaoke` | — | Use clean text instead of karaoke highlight |
-| `--advanced-text` | `False` | Enable kinetic typography (word scaling & animation) |
-| `--advanced-text-hook` | `False` | Enable kinetic typography specifically on the hook teaser |
-| `--use-dlp-subs` | — | Use YouTube's built-in subtitles to speed up process (skips Whisper if found) |
-| `--face-detector` | `mediapipe` | AI model for face tracking (`mediapipe` or `yolo`) |
-| `--box-face-detection` | `False` | Draw yellow bounding boxes for tracking debug |
-| `--dev-mode` | `False` | **[Experimental]** Enable 16:9 context visualization for 9:16 tracking/stabilization process |
-| `--dev-mode-with-output` | `False` | **[Experimental]** Generates both the final production video and the dev dashboard video simultaneously. |
-| `--dev-mode-with-output-merge` | `False` | **[Experimental]** Generates a merged ultrawide side-by-side video of the final output and the dev dashboard with boxed framing (v0.9.3). |
-| `--track-lines` | `False` | Draw crosshair tracking lines extending from the face box to the boundaries |
-| `--static-crop` | `False` | Disable face tracking and use static center crop for `1:1`, `3:4`, and `4:5` formats |
-| `--yolo-size` | `8m` | YOLO face track model (`8n`, `8s`, `8m`, `8n_v2`, `9c`) |
-| `--whisper-model` | `large-v3` | Whisper model size ([see here](https://github.com/SYSTRAN/faster-whisper?tab=readme-ov-file#whisper) for options) |
-| `--whisper-device` | `cuda` | Whisper device (`cuda`, `cpu`, `auto`) |
-| `--whisper-compute-type` | `float16` | Compute type for Whisper (`float32`, `float16`, `int8`, etc.) |
-| `--gemini-model` | `gemini-3-flash-preview` | Gemini model name |
-| `--gemini-fallback-model` | `gemini-2.5-flash` | Gemini fallback model name if main model fails |
-| `--load-gemini-json` | `False` | Load the saved `gemini_response.json` from the output directory to bypass the Gemini API call |
-| `--split-screen` | `False` | Enable split-screen mode for podcasts (9:16 only, requires `HF_TOKEN`). Supports 3+ speakers across multiple scenes |
-| `--dynamic-split` | `False` | Automatically switch between full-screen and split-screen based on activity (requires `--split-screen`) |
-| `--split-trigger` | `diarization` | Trigger for splitting: `diarization` (audio-based) or `face` (visual count) |
-| `--diarization-speakers` | `auto` | Number of speakers for diarization (set to `3` for exact 3 speakers, or `auto` for visual AI auto-detection) |
-| `--camera-switch` | `False` | Enable camera-switch mode for podcasts — full 9:16 crop switches to the active speaker; blurred pillarbox on simultaneous speech (9:16 only, requires `HF_TOKEN`) |
-| `--switch-hold-duration` | `2.0` | Min seconds to hold on current speaker before switching (camera-switch only) |
-| `--switch-blend-duration` | `0.0` | Transition duration when switching speakers (0 = instant snap, 0.2 = smooth blend) |
-| `--split-zoom` | `1.0` | Manual zoom factor for split-screen panels (e.g. 1.2, 1.5) |
-| `--split-v-align` | `0.5` | Vertical alignment for split-screen panels (0.0=top, 0.5=center, 1.0=bottom) |
-| `--split-auto-zoom` | `False` | **[New]** Automatically zoom into each panel to separate speakers for a clean frameless look |
-| `--split-max-zoom` | `2.5` | Maximum zoom limit allowed for auto-zoom (default: 2.5) |
-| `--track-step` | `None` | Face detection frequency in seconds (default: `0.25`) |
-| `--track-deadzone` | `None` | Camera deadzone ratio where subject stays centered (default: `0.15`) |
-| `--track-smooth` | `None` | Camera catch-up speed factor (default: `0.30`) |
-| `--track-jitter` | `None` | Pixel threshold to ignore micro-shakes (default: `5`) |
-| `--track-snap` | `None` | Jump threshold to trigger hard cut between speakers (default: `0.25`) |
-| `--track-conf` | `0.55` | **[Experimental]** Face detection confidence threshold (raise to prevent ghosts) |
-| `--track-smooth-window` | `12` | **[Experimental]** Frame window for layout stability (12 frames ≈ 0.5s) |
-| `--scene-cut-threshold` | `18` | **[Experimental]** Sensitivity for camera-cut detection (instantly resets history) |
-| `--track-iou-threshold` | `0.2` | **[Experimental]** Overlap threshold for merging duplicate detections |
-
-## 📐 Aspect Ratios
-
-Clipit supports **5 output aspect ratios**. All vertical/square ratios include **face-tracking** by default to keep the subject centered.
-
-| Ratio | Output | Face Tracking | Best For |
-|---|---|---|---|
-| `9:16` | 1080×1920 | ✅ Yes | TikTok, Reels, YouTube Shorts |
-| `16:9` | 1920×1080 | ❌ No (letterbox if source differs) | YouTube, Landscape content |
-| `1:1` | 1080×1080 | ✅ Yes (can disable via `--static-crop`) | Instagram Feed, Twitter/X |
-| `3:4` | 1080×1440 | ✅ Yes (can disable via `--static-crop`) | Instagram Portrait, Pinterest |
-| `4:5` | 1080×1350 | ✅ Yes (can disable via `--static-crop`) | Instagram/Facebook Feed |
-
-> [!NOTE]
-> When using `16:9` output with a non-16:9 source (e.g., vertical video), the system applies **letterboxing** (black bars) to preserve the original proportions instead of stretching.
-
-## 🎙️ Podcast Modes
-
-When processing podcast videos, you can choose between several intelligent rendering modes. These modes support **3+ speakers across multiple scenes**.
-
-### 1. **`--split-screen` (Split Layout)**
-Divides the screen into panels to show multiple speakers simultaneously.
-*   **Default:** Permanent **Top-Bottom** layout (supports 3+ speakers via panel-swapping).
-*   **`--dynamic-split`:** Automatically switches between **Full 9:16** (when 1 person is talking/visible) and **Split** (when 2+ are active).
-*   **Trigger Modes (`--split-trigger`):**
-    *   **`diarization` (Default):** Uses audio to know who is talking. Requires `HF_TOKEN`. Dimming effect on inactive speaker.
-    *   **`face`:** Uses visual face count. **No token required**. No dimming effect.
-*   **Optimization Features:**
-    *   **Smart Separation Zoom (`--split-auto-zoom`):** Dynamically adjusts the zoom level of each panel to keep the framing tight on the speaker while excluding other detected faces. Ensures no "overlap" even when subjects are sitting close together.
-    *   **Vertical Tracking:** Automatically follows face height, keeping the subject centered vertically (adjustable via `--split-v-align`).
-*   **Best for:** Educational podcasts or when reaction shots are important.
-
-### 2. **`--camera-switch` (Cinematic Switching)**
-Mimics professional editing by focusing only on the active speaker in full screen.
-*   **View:** **Full 9:16** that cuts between speakers.
-*   **Scene-Aware:** Automatically uses **Blurred Pillarbox** if two people in the same wide-shot are talking; otherwise stays in clean full-crop.
-*   **Best for:** Storytelling, interviews, or high-energy clips.
-
----
-
-### **Comparison Table**
-
-| Feature | `--split-screen` | `--camera-switch` |
-| :--- | :--- | :--- |
-| **Visual Layout** | Split (Top-Bottom) | Full Screen (Switching) |
-| **Dynamic Mode** | ✅ `--dynamic-split` (Auto-toggle) | ✅ Always Dynamic |
-| **Trigger Source** | Audio or Visual (`--split-trigger`) | Audio Only (Diarization) |
-| **Reaction Shots** | ✅ Both speakers visible | ❌ Only 1 speaker visible |
-| **Requirement** | Optional `HF_TOKEN` (Visual mode needs no token) | `HF_TOKEN` (Required) |
-
-> [!TIP]
-> Use `--split-screen --dynamic-split --split-trigger face` for the fastest rendering without needing any special API tokens or Diarization models.
-
----
-
-## 🚀 Quick Start Examples
+### 2. Generate Your First Clip (CLI)
 
 ```bash
-# 1. Standard AI Clipping (7 clips, 9:16)
-python main.py --url "VIDEO_URL"
-
-# 2. Dynamic Split-Screen (Visual-based, NO TOKEN REQUIRED)
-python main.py --url "VIDEO_URL" --split-screen --dynamic-split --split-trigger face
-
-# 3. Dynamic Split-Screen (Audio-based, Highlight active speaker, needs HF_TOKEN)
-python main.py --url "VIDEO_URL" --split-screen --dynamic-split --split-trigger diarization
-
-# 4. Cinematic Camera Switch (Needs HF_TOKEN)
-python main.py --url "VIDEO_URL" --camera-switch
-
-# 5. Smart Separation Split-Screen (Auto-Zoom & Vertical Track)
-python main.py --url "VIDEO_URL" --split-screen --dynamic-split --split-trigger face --split-auto-zoom --split-v-align 0.4
-
-# 6. Square output (1:1) with Split-Screen
-python main.py --url "VIDEO_URL" --ratio "1:1" --split-screen --dynamic-split --split-trigger face
-
-# 7. Hook V2 + Segment Trimming (default)
-python main.py --url "VIDEO_URL" --hook-v2
-
-# 8. Hook V2 + Aggressive Silence Trimming
-python main.py --url "VIDEO_URL" --hook-v2 --silence-trim
-
-# 9. Hook V2 without Segment Trimming (full render)
-python main.py --url "VIDEO_URL" --hook-v2 --no-segment-trim
-
-# 10. Hook V2 Custom: 4 micro-hooks with glitch style
-python main.py --url "VIDEO_URL" --hook-v2 --hook-v2-items 4 --hook-v2-style "glitch_fast"
+# Ingest YouTube video, transcribe with Whisper, and generate 3 viral 9:16 portrait clips
+clipit --url "https://www.youtube.com/watch?v=dQw4w9WgXcQ" --clips 3 --ratio 9:16 --font-style HORMOZI
 ```
 
-> [!IMPORTANT]
-> Audio-based features (diarization) require a **HuggingFace Token** (`HF_TOKEN`) in your `.env` file and acceptance of the Pyannote model agreement on HuggingFace.
+### 3. Launch the Web Studio GUI
 
-## 🗣️ AI Voice-Over Commentary
-
-Prevent YouTube copyright/reused content strikes by turning raw clips into **original commentary/reaction videos** automatically.
-
-When you pass the `--voiceover` flag, the pipeline will:
-1. Generate a sharp, opinionated analysis script using **Gemini AI** based on the clip's specific transcript.
-2. Synthesize the script into natural-sounding speech using **edge-tts** (free, no GPU required).
-3. **Duck** the original video's audio down to 15% volume and overlay the AI voice-over at 100% volume.
-4. **Override** the burned-in karaoke subtitles so they display the AI narrator's words instead of the original video transcript.
-5. **Visual Enhancements**: Displays a relaxed audio spectrum visualizer and a premium, slow-moving ambient edge glow around the freeze-frame intro.
-
-**Example Usage:**
 ```bash
-# Basic voice-over (Uses default en-US-AvaNeural and English language)
-python main.py --url "VIDEO_URL" --voiceover
-
-# Voice-over in Indonesian with reaction style
-python main.py --url "VIDEO_URL" --voiceover --voiceover-lang id --voiceover-voice id-ID-ArdiNeural --voiceover-style reaction
+# Start FastAPI backend & open React 19 dashboard
+clipit-web --port 8000
 ```
+Open **http://localhost:8000** (or `http://localhost:5173` in development).
 
-**Config Options:**
-- `--voiceover-voice`: Choose the TTS voice (e.g. `en-US-AvaNeural`, `id-ID-GadisNeural`).
-- `--voiceover-lang`: Script language (`en` or `id`).
-- `--voiceover-style`: `analysis` (default), `reaction`, `lesson`, or `summary`.
-- `--voiceover-length`: Length of the script (`short` [default: 5-15s], `normal` [20-40s], `long` [40-60s]).
-- `--voiceover-volume`: Volume of narrator (default 1.0).
-- `--original-volume`: Volume of ducked video audio (default 0.15).
-- `--edge-glow`: Apply the ambient edge glow effect to the **entire** video, instead of just the voice-over intro.
-- `--edge-glow-mode`: Edge glow strategy (`default`, `smooth` [default], or `full`). `smooth` mathematically adjusts speed to remove stuttering in loops.
+### 4. Desktop App Mode
 
-## 🎵 BGM (Background Music) Settings
-
-- `--no-bgm` : Disable the BGM feature entirely.
-- `--bgm-mode ducking` *(default)* : **Sidechain Ducking** mode — BGM volume automatically lowers when the speaker is talking, then rises during pauses. Provides a professional effect like premium podcasts/YouTube videos.
-- `--bgm-mode background` : **Constant Background** mode — BGM plays at a stable, low volume throughout the video without dynamic adjustments. Best for content with few pauses.
-
-> 📁 **BGM Setup:**
-> Place your royalty-free `.mp3` files into the `assets/bgm/<mood>/` folder (e.g., `assets/bgm/chill/`, `assets/bgm/epic/`, `assets/bgm/sad/`, `assets/bgm/upbeat/`, `assets/bgm/suspense/`). The script will **randomly** select a song from the mood folder requested by the AI. If the folder is empty, BGM will be skipped automatically.
->
-> BGM files shorter than the video will be **auto-looped** (`-stream_loop -1`).
->
-> See `assets/bgm/README.md` for recommended sources to download free BGM.
-
-## 🎬 Understanding Hook V2 & Segment Trimming
-
-### Final Video Structure
-
+```bash
+# Spawns backend on dynamic free port and opens default browser window
+python3 -m desktop.launcher
 ```
-[Hook V2 Intro] → [MAIN CLIP] → done
-   ↑                    ↑
-   Rapid micro-hooks    This part is affected by Segment Trimming
-   (0.5-2s × 3-4)
-```
-
-**Hook V2** and **Segment Trimming** are two independent features that operate on different parts of the video.
-
-### Hook V2 (Multi-Hook Intro)
-
-Hook V2 creates a **rapid-fire intro** at the beginning of the video — 3-4 short clips (0.5-2 seconds) taken from the most punchy/controversial moments within the clip. Each piece is separated by a white flash or glitch transition. The goal: **stop the viewer from scrolling** within the first 3-5 seconds.
-
-```
-Example Hook V2:
-  [Clip 1: "NOBODY DARES" (1s)] → ⚡flash → [Clip 2: "THEY'RE ALL WRONG" (0.8s)] → ⚡flash → [Clip 3: "HERE'S THE TRUTH" (1.2s)] → [MAIN CLIP]
-```
-
-### Segment Trimming
-
-Segment Trimming only applies to the **main clip** (after the hook). AI analyzes the main clip and **removes** boring sections — they're not sped up, they're **cut out entirely**, and the good parts are stitched together seamlessly.
-
-```
-Example:
-  Main clip: second 30 - 90 (60 seconds total)
-  
-  AI finds:
-    ✅ Second 30-55 : strong content, engaging
-    ❌ Second 55-58 : speaker pauses/filler (removed)
-    ✅ Second 58-90 : strong punchline
-
-  Result: segment 1 + segment 2 joined directly
-  Final duration: 57 seconds (3 seconds of filler removed)
-```
-
-### Flag Comparison
-
-| Flag | Behavior | Affected Part |
-|---|---|---|
-| *(default, no flag)* | AI smart-trims boring/filler sections | Main clip only |
-| `--silence-trim` | AI trims more aggressively — pauses >0.5s removed | Main clip only |
-| `--no-segment-trim` | No trimming, full start-to-end render | Main clip only |
-
-> [!NOTE]
-> - **Hook V2 is not affected** by any of the above flags. Hook V2 always picks its rapid-fire clips as chosen by AI.
-> - **`--no-hook` only disables Hook V1** (the 3-second glitch teaser). Hook V2 (`--hook-v2`) works independently even when `--no-hook` is active.
-> - Segment Trimming and Silence Trimming **work without Hook V2** — just omit the `--hook-v2` flag.
-> - If AI determines the entire clip is already tight and engaging, `keep_segments` will contain a single segment spanning the full duration (same effect as `--no-segment-trim`).
 
 ---
 
-## 🐍 Recommended Configurations (Notebook/Colab)
+## 🖥️ Web Studio GUI
 
-These are verified configurations for optimal results in different scenarios.
+The Clipit Web Studio combines the flexibility of an enterprise web application with real-time video workstation tools:
 
-### 1. Standard Mode (Standard Clipping)
-Best for general videos where you want the best accuracy and focus.
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│  CLIPIT STUDIO                                      [Theme] [Settings] │
+├────────────────────────────┬───────────────────────────────────────────┤
+│ 📁 JOBS                    │ 🎬 PREVIEW & INSPECTOR                    │
+│ • [Done] Lex Fridman #400  │ ┌───────────────────────────────────────┐ │
+│ • [Proc] Tech Keynote 2026 │ │                                       │ │
+│ • [Done] Gaming Highlights │ │   [9:16]      [1:1]       [16:9]      │ │
+│                            │ │  Portrait    Square     Landscape     │ │
+│ ⚙️ BULK ACTIONS             │ │                                       │ │
+│ [Select All] [Download Zip]│ └───────────────────────────────────────┘ │
+│ [Retry]      [Delete]      │ 📝 TRANSCRIPT SEEKER                      │
+│                            │ "The secret to AI [01:23] is scale..."    │
+└────────────────────────────┴───────────────────────────────────────────┘
+```
+
+- **Side-by-Side Multi-Layout Previewer**: Compare 9:16 Portrait (TikTok/Shorts), 1:1 Square (Instagram/LinkedIn), and 16:9 Landscape in real time.
+- **Word-Level Interactive Transcript Editor**: Click any transcribed word to seek directly to that video frame.
+- **Batch Management**: Search, tag, bulk download ZIP bundles (`/api/outputs/{job_id}/zip`), and retry failed jobs.
+- **Accessible & Adaptive**: Full keyboard navigation, screen reader ARIA landmarks, WCAG 2.1 AA compliant contrast, and dark/light modes.
+
+---
+
+## ✨ Key Features
+
+| Capability | Module | Description |
+|---|---|---|
+| **AI Content Intelligence** | [`clipping/engine.py`](file:///home/sensei/Projects/backend/clipit/clipping/engine.py) | Gemini, Groq, OpenRouter, and NVIDIA NIM providers score viral hooks, context, and emotional peaks. |
+| **Kinetic Typography & Emojis** | [`clipping/emoji_engine.py`](file:///home/sensei/Projects/backend/clipit/clipping/emoji_engine.py) | Dynamic keyword highlight palettes and automated transcript-driven animated emojis. |
+| **Natural Scene-Cut Snapping** | [`clipping/scene_detect.py`](file:///home/sensei/Projects/backend/clipit/clipping/scene_detect.py) | Detects camera transitions and snaps clip boundaries cleanly to scene cuts. |
+| **Audio SFX Synthesis** | [`clipping/studio/sfx.py`](file:///home/sensei/Projects/backend/clipit/clipping/studio/sfx.py) | Generates native FFmpeg audio risers, whooshes, impacts, and pops on key moments. |
+| **Dynamic Split-Screen & Multi-Cam** | [`clipping/studio/presets.py`](file:///home/sensei/Projects/backend/clipit/clipping/studio/presets.py) | Pyannote 3.1 speaker diarization stacked split-screen and auto-camera switching for podcasts. |
+| **Silence Dead-Air Trimming** | [`clipping/silence.py`](file:///home/sensei/Projects/backend/clipit/clipping/silence.py) | Removes long pauses and dead air before LLM analysis to maximize audience retention. |
+| **Multimodal Vision Scoring** | [`clipping/vision_scoring.py`](file:///home/sensei/Projects/backend/clipit/clipping/vision_scoring.py) | Evaluates Laplacian gradient sharpness, contrast, and exposure to pick optimal thumbnail frames. |
+| **Auto-Chapters & SEO Show Notes** | [`clipping/chapters.py`](file:///home/sensei/Projects/backend/clipit/clipping/chapters.py) | Generates YouTube description chapter timestamps (`00:00 Intro`) and markdown show notes. |
+| **Copyright Safety Analyzer** | [`clipping/copyright.py`](file:///home/sensei/Projects/backend/clipit/clipping/copyright.py) | Audits Content ID risks and recommends pitch-shifting, tempo ramping, and B-roll cadence. |
+| **Audience Persona Targeting** | [`clipping/persona.py`](file:///home/sensei/Projects/backend/clipit/clipping/persona.py) | Custom prompt and typography presets for Tech Founders, Creators, Finance, Education, and Fitness. |
+| **Streamer & Esports Detection** | [`clipping/stream_highlight.py`](file:///home/sensei/Projects/backend/clipit/clipping/stream_highlight.py) | Identifies audio volume RMS spikes and transcript hype trigger clusters during gameplay. |
+
+---
+
+## 🛠️ CLI Reference
+
+```bash
+# Full option help
+clipit --help
+```
+
+### Common Command Recipes
+
+```bash
+# 1. High-Energy Viral Clip with Sound Effects & Emojis
+clipit --url "https://..." \
+  --clips 5 --ratio 9:16 \
+  --font-style HORMOZI \
+  --semantic-emojis \
+  --keyword-palette modern \
+  --use-sfx --sfx-volume 0.85 \
+  --snap-scene-cuts
+
+# 2. Podcast Split-Screen with Diarization & Auto Camera Switching
+clipit --url "https://..." \
+  --split-screen --dynamic-split \
+  --diarization-speakers 2 \
+  --camera-switch --switch-hold-duration 2.0
+
+# 3. Audio Mastering: Dead-Air Removal & Broadcast LUFS Normalization
+clipit --url "https://..." \
+  --silence-trim --silence-thresh-db -32.0 \
+  --normalize-audio --target-lufs -14.0
+
+# 4. Audience Persona & High-CTR Title Optimization
+clipit --url "https://..." \
+  --persona tech_founder \
+  --thumbnail-variants
+
+# 5. Deterministic CI Dry-Run (No video encoding)
+clipit --url "https://..." --dry-run --seed 42
+```
+
+---
+
+## 🏢 Enterprise & Batch API
+
+Clipit includes an enterprise-grade REST API:
+
+- **Bulk Video Ingestion**: Submit up to 100 jobs atomically via `POST /api/batch/jobs`.
+- **Aggregate Progress**: Poll batch status with counts of queued, processing, completed, and failed tasks via `GET /api/batch/{batch_id}`.
+- **Signed Webhook Dispatch**: Receive tamper-proof event delivery (`job.completed`, `job.failed`) signed with HMAC-SHA256 (`X-Clipit-Signature`).
+- **Distributed Queue**: Seamless horizontal scaling with Redis FIFO lists (`CLIPIT_REDIS_URL`).
+
+```bash
+# Example Batch Ingestion:
+curl -X POST http://localhost:8000/api/batch/jobs \
+  -H "Content-Type: application/json" \
+  -d '{
+    "items": [
+      {"url": "https://youtube.com/watch?v=EP1", "pilihan_rasio": "9:16"},
+      {"url": "https://youtube.com/watch?v=EP2", "pilihan_rasio": "1:1"}
+    ],
+    "default_config": {"font_style": "HORMOZI", "use_sfx": true},
+    "batch_webhook_url": "https://my-api.com/clipit-webhook"
+  }'
+```
+
+---
+
+## 📦 Community Template Marketplace (.clipit-pack)
+
+Export and share complete presets, custom TrueType fonts, and audio assets in portable `.clipit-pack` zip archives:
+
 ```python
-# Constants for Standard Clipping
-URL_YOUTUBE = "https://www.youtube.com/watch?v=UXhdIF8kvCI"
-JUMLAH_CLIP = 7
-RASIO = "9:16"
-FONT_STYLE = "DEFAULT"
-GEMINI_MODEL = "gemini-2.0-flash"
+from clipping.marketplace import export_pack, import_pack
 
-!python main.py \
-  --url "{URL_YOUTUBE}" \
-  --clips {JUMLAH_CLIP} \
-  --ratio "{RASIO}" \
-  --font-style "{FONT_STYLE}" \
-  --hook-duration 3 \
-  --words-per-sub 5 \
-  --face-detector yolo \
-  --gemini-model "{GEMINI_MODEL}" \
-  --no-bgm \
-  --no-subs \
-  --no-broll \
-  --use-dlp-subs
+# Export pack
+export_pack(
+    pack_name="Cyberpunk Viral",
+    preset_data={"font_style": "NEON_CYBER", "pilihan_rasio": "9:16", "use_sfx": True},
+    output_path="cyberpunk.clipit-pack",
+    author="Community Creator",
+    asset_files={"custom_fonts/cyber.ttf": "fonts/cyber.ttf"}
+)
+
+# Safe install with directory-traversal (Zip-Slip) defense
+import_pack("cyberpunk.clipit-pack", install_dir="./")
 ```
 
-### 2. Split-Screen Mode (Podcasts)
-Optimized for podcasts with 2+ speakers using stable YOLO detection.
+---
+
+## 🤖 Model Context Protocol (MCP) Server
+
+Equip AI agents (Cursor, Claude Desktop, Antigravity) with native video clipping capabilities:
+
+```json
+{
+  "mcpServers": {
+    "clipit": {
+      "command": "python3",
+      "args": ["-m", "clipping.mcp_server"],
+      "env": {
+        "GOOGLE_API_KEY": "your_gemini_api_key"
+      }
+    }
+  }
+}
+```
+
+---
+
+## 🐍 Python SDK
+
 ```python
-# Constants for Split-Screen
-URL_YOUTUBE = "https://www.youtube.com/watch?v=UXhdIF8kvCI"
-JUMLAH_CLIP = 3
-RASIO = "9:16"
-FONT_STYLE = "DEFAULT"
-GEMINI_MODEL = "gemini-2.0-flash"
+from sdk.python import ClipitClient
 
-!python main.py \
-  --url "{URL_YOUTUBE}" \
-  --clips {JUMLAH_CLIP} \
-  --ratio "{RASIO}" \
-  --font-style "{FONT_STYLE}" \
-  --hook-duration 3 \
-  --words-per-sub 5 \
-  --gemini-model "{GEMINI_MODEL}" \
-  --no-bgm \
-  --no-subs \
-  --no-broll \
-  --split-screen \
-  --dynamic-split \
-  --split-trigger face \
-  --face-detector yolo \
-  --use-dlp-subs
+client = ClipitClient(base_url="http://localhost:8000", api_key="optional_key")
+
+# Submit clipping job
+job = client.submit_job(
+    url="https://www.youtube.com/watch?v=VIDEO_ID",
+    ratio="9:16",
+    clips=3,
+    preset="tiktok_viral"
+)
+
+# Poll until rendering completes
+result = client.poll_job_until_done(job["id"], timeout_sec=300)
+print(f"Generated {len(result['clips'])} viral clips!")
 ```
 
-## 📂 Project Structure
+---
 
-```text
-clipit/
-├── main.py                  # CLI entry point
-├── run_upload.py            # YouTube auto-uploader CLI
-├── run_fb_upload.py         # Facebook Pages Reels uploader CLI
-├── pyproject.toml           # Dependencies & metadata
-├── .env.sample              # API key template
-├── .gitignore
-├── README.md                # English docs
-├── README_AR.md             # Arabic docs
-├── README_RU.md             # Russian docs
-├── README_ZH.md             # Chinese docs
-├── README_KO.md             # Korean docs
-├── clipping/
-│   ├── config.py            # Master configuration & argparse
-│   ├── engine.py            # Download → Transcribe → Gemini AI
-│   ├── diarization.py       # Pyannote speaker diarization
-│   ├── metadata.py          # QA metadata normalization
-│   ├── runner.py            # Pipeline orchestrator
-│   ├── story/               # Story mode modules
-│   └── studio/              # Video render engine modules
-├── facebook_uploader/       # Facebook Pages Reels upload & scheduling
-├── web/                     # Web API and React Dashboard
-├── youtube_tracker/         # YouTube Tracker Web App
-└── youtube_uploader/        # YouTube upload & scheduling logic
-```
+## 🐳 Docker Deployment
 
-## 📊 Results
-
-| 1 video 9:16 | 1 video split from youtube shorts link |
-|:---:|:---:|
-| <a href="https://www.youtube.com/shorts/hTtU4iI-aKA"><img src="https://img.youtube.com/vi/hTtU4iI-aKA/0.jpg" width="250"></a><br><br>[**Watch Example**](https://www.youtube.com/shorts/hTtU4iI-aKA)<br>*(Standard 9:16 Auto-Framing)* | <a href="https://www.youtube.com/shorts/RnoJqC8Yur4"><img src="https://img.youtube.com/vi/RnoJqC8Yur4/0.jpg" width="250"></a><br><br>[**Watch Example**](https://www.youtube.com/shorts/RnoJqC8Yur4)<br>*(Split-Screen Podcast Mode)* |
-
-## 🔄 Pipeline Flow
-
-```mermaid
-graph LR
-    A[Video URL] --> B[Download Video]
-    B --> C[Whisper Transcription]
-    C --> D[Gemini AI Analysis]
-    D --> E[Metadata QA]
-    E --> F[Render Loop]
-    F --> G[Face-Track Crop]
-    F --> H[B-Roll + BGM]
-    F --> I[ASS Subtitles]
-    F --> J[Hook + Glitch]
-    G & H & I & J --> K[Final MP4 + Thumbnail]
-```
-
-## 📤 Output
-
-For each clip, the pipeline creates an `outputs/` directory and generates:
-
-| File | Description |
-|---|---|
-| `outputs/highlight_rank_N_ready.mp4` | Final rendered clip with subtitles, B-roll, BGM |
-| `outputs/thumbnail_rank_N.jpg` | Auto-generated thumbnail with title text |
-| `outputs/render_manifest.json` | Manifest with metadata for all clips |
-| `outputs/metadata_preview.json` | Gemini-generated metadata (titles, tags, captions) |
-
-## 🎵 Font Styles
-
-| Style | Main Font | Emphasis Font | Best For |
-|---|---|---|---|
-| `HORMOZI` | Montserrat | Anton | Business / motivational |
-| `STORYTELLER` | Inter | Lora | Narrative / storytelling |
-| `CINEMATIC` | Roboto | Bebas Neue | Film / dramatic |
-| `DEFAULT` | Montserrat Black | Montserrat Medium | General purpose |
-
-## 📺 Auto-Upload to YouTube
-
-The project now includes a standalone YouTube auto-uploader with scheduling support!
-
-1. Place your configured `youtube_token.json` file inside the `.credentials/` directory.
-2. After the rendering process finishes, the script will automatically read from the generated `outputs/` directory (e.g., `outputs/render_manifest.json` and the final videos). Simply run the uploader:
-   ```bash
-   # Basic run (uses default 8-hour interval and auto timezone)
-   python run_upload.py
-
-   # Or run with custom arguments (example):
-   python run_upload.py --interval-hours 12 --tz-name "Asia/Jakarta"
-   ```
-3. To run a test with only the first video, use `python run_upload.py --test-mode`. Run `python run_upload.py --help` to see all scheduling and timezone options.
-
-## 📘 Auto-Upload to Facebook Pages (Reels)
-
-The project also includes a standalone Facebook Pages Reels uploader with native scheduling support via the Meta Graph API!
-
-**Prerequisites:**
-- A Facebook Page Access Token (long-lived) with `pages_manage_posts` and `pages_read_engagement` permissions.
-- Set `META_PAGE_ID`, `META_PAGE_ACCESS_TOKEN`, and `META_GRAPH_VERSION` in your `.env` file.
-
-**How it works:**
-1. Validates your Page Access Token against the Graph API.
-2. Reads existing scheduled posts to determine the next available time slot.
-3. Uploads each clip as a Reel: create session → upload binary → poll processing → publish/schedule.
-4. First clip publishes immediately if no queue exists; subsequent clips are scheduled at 5-hour intervals (configurable).
-5. If any step fails, the batch **stops immediately** (no fallback to instant publish).
+Clipit is published as a multi-arch container image (`linux/amd64` and `linux/arm64`):
 
 ```bash
-# Basic run (reads .env for META_PAGE_ID & META_PAGE_ACCESS_TOKEN)
-python run_fb_upload.py
+# Run with Docker Compose (includes Redis and persistent volumes)
+docker compose up -d
 
-# Test mode — only upload the first clip
-python run_fb_upload.py --test-mode
-
-# Custom interval (3 hours between videos)
-python run_fb_upload.py --interval-hours 3
-
-# See all options
-python run_fb_upload.py --help
+# Check health endpoint
+curl http://localhost:8000/api/health
 ```
 
-| Argument | Default | Description |
-|---|---|---|
-| `--manifest-file` | `outputs/render_manifest.json` | Input manifest from clipping pipeline |
-| `--result-file` | `outputs/fb_upload_results.json` | Output JSON trace file |
-| `--updated-manifest` | `outputs/render_manifest_fb_uploaded.json` | Updated manifest with upload status |
-| `--tz-name` | `Asia/Makassar` | Timezone for scheduling (IANA format) |
-| `--interval-hours` | `5` | Gap between scheduled uploads (hours) |
-| `--test-mode` | `false` | Upload only the first video |
+---
 
-## 🧹 Disk Cleanup
+## 🤝 Community & Governance
 
-Since the pipeline downloads full source videos and creates intermediate files (wav, chunks, transcripts), the `outputs/` and `uploads/` directories can grow very large over time. 
+We are committed to building an open, welcoming, and inclusive community:
 
-We provide a simple bash script to safely clean up all temporary files while preserving your final generated clips and job history (`jobs.json`):
+- 📜 **[Code of Conduct](CODE_OF_CONDUCT.md)**: Contributor Covenant v2.1 standards.
+- 💡 **[Contributing Guide](CONTRIBUTING.md)**: Development setup, PR process, and testing standards.
+- 🛡️ **[Security Policy](SECURITY.md)**: Vulnerability disclosure and safe harbor guidelines.
+- ♿ **[Accessibility Statement](ACCESSIBILITY.md)**: WCAG 2.1 AA conformance standards for both UI and video captions.
+- 🗺️ **[Product Roadmap](Roadmap.md)**: Strategic development phases and competitive benchmarks.
 
-```bash
-bash cleanup.sh
-```
-
-## ❤️ Support & Contributing
-
-Feel free for contributing, support, fork, likes, etc. Any feedback is greatly appreciated to keep this open-source project growing!
-
-- **Saweria:** [https://saweria.co/ayoubzulfiqar17](https://saweria.co/ayoubzulfiqar17)
-- **Ko-fi:** [https://ko-fi.com/ayoubzulfiqar](https://ko-fi.com/ayoubzulfiqar)
+---
 
 ## 📄 License
 
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+**Clipit** is licensed under the **[GNU Affero General Public License v3.0 (AGPL-3.0-or-later)](LICENSE)**.
 
-Copyright (c) 2026 Ayoub Zulfiqar
+- **Freedom to Run & Modify**: You may run, inspect, modify, and distribute Clipit for personal or commercial purposes.
+- **Copyleft & Network Continuity**: If you run a modified version of Clipit on a network server or provide it as a hosted service, you **must make the complete corresponding source code available to all users** interacting with it over the network under the terms of the AGPLv3.
+- **Attribution**: Preserve all original copyright notices and author attributions.
+
+Copyright (c) 2026 Ayoub Zulfiqar and Clipit Contributors.
