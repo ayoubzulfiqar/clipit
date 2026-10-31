@@ -39,6 +39,10 @@ def run_pipeline(cfg, whisper_model_instance=None) -> list[dict]:
     """
 
     # Step 1 — Download
+    if getattr(cfg, "seed", None) is not None:
+        import random
+        random.seed(cfg.seed)
+
     source_platform = getattr(cfg, "source_platform", "youtube")
     resume_enabled = getattr(cfg, "resume", True)
 
@@ -147,6 +151,29 @@ def run_pipeline(cfg, whisper_model_instance=None) -> list[dict]:
 
     metadata_path = os.path.join(cfg.outputs_dir, "metadata_preview.json")
     metadata.save_metadata_preview(hasil_json, path=metadata_path)
+
+    # Dry-run check: bypass video encoding and rendering passes
+    if getattr(cfg, "dry_run", False):
+        print("\n🧪 [DRY RUN] Mode aktif — melewati encoding dan rendering video.")
+        render_manifest = []
+        for klip in hasil_json:
+            rank = klip.get("rank", 1)
+            output_name = f"clip_{rank}.mp4"
+            render_manifest.append({
+                "rank": rank,
+                "output_file": os.path.join(cfg.outputs_dir, output_name),
+                "start_time": klip.get("start_time"),
+                "end_time": klip.get("end_time"),
+                "duration": round(float(klip.get("end_time", 0.0)) - float(klip.get("start_time", 0.0)), 2),
+                "title": klip.get("title", ""),
+                "viral_score": klip.get("viral_score", 0),
+                "dry_run": True,
+            })
+        manifest_path = os.path.join(cfg.outputs_dir, "render_manifest.json")
+        with open(manifest_path, "w", encoding="utf-8") as f:
+            json.dump(render_manifest, f, indent=4, ensure_ascii=False)
+        print(f"💾 Render manifest (dry-run) disimpan ke {manifest_path} ({len(render_manifest)} item)")
+        return render_manifest
 
     # Step 5 — Diarization (split-screen / camera-switch)
     diarization_data = None
