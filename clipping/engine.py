@@ -19,6 +19,11 @@ try:
 except ImportError:
     WhisperModel = None
 
+from clipping.hardware import resolve_whisper_device
+from clipping.logger import get_logger
+
+logger = get_logger("clipping.engine")
+
 
 # ==============================================================================
 # TAHAP 1: DOWNLOAD VIDEO
@@ -403,12 +408,35 @@ def transcribe_video(
             flush=True,
         )
     else:
+        resolved_device, resolved_compute = resolve_whisper_device(device, compute_type)
+        if resolved_device != device or resolved_compute != compute_type:
+            logger.info(
+                "Whisper hardware resolved: requested (%s, %s) -> using (%s, %s)",
+                device,
+                compute_type,
+                resolved_device,
+                resolved_compute,
+            )
         print(
-            f"      ⏳ Memuat model Whisper '{model_size}' ({device})"
+            f"      ⏳ Memuat model Whisper '{model_size}' ({resolved_device}:{resolved_compute})"
             " — unduhan pertama kali bisa memakan waktu...",
             flush=True,
         )
-        model = WhisperModel(model_size, device=device, compute_type=compute_type)
+        try:
+            model = WhisperModel(model_size, device=resolved_device, compute_type=resolved_compute)
+        except Exception as exc:
+            if resolved_device == "cuda":
+                logger.warning(
+                    "Gagal inisialisasi Whisper pada CUDA (%s). Mengalihkan fallback ke CPU int8.",
+                    exc,
+                )
+                print(
+                    "      ⚠️ Inisialisasi CUDA gagal, beralih ke CPU (int8)...",
+                    flush=True,
+                )
+                model = WhisperModel(model_size, device="cpu", compute_type="int8")
+            else:
+                raise exc
 
     print("      ⏳ Mendekode audio & mengekstrak fitur (belum ada output)...", flush=True)
     segments, info = model.transcribe(video_path, beam_size=5, word_timestamps=True)
@@ -685,20 +713,15 @@ ATURAN PEMOTONGAN TIMING:
 - Jika ada dua momen kuat yang terlalu berdekatan dan saling mendukung, boleh digabung selama durasi tetap {MIN_CLIP_DURATION}-{MAX_CLIP_DURATION} detik.
 - Jika ada dua momen kuat tetapi angle-nya berbeda, pisahkan sebagai kandidat klip berbeda.
 
-PENILAIAN INTERNAL VIRAL_SCORE:
-Nilai viral_score 1-100 berdasarkan komponen berikut. Ini hanya untuk penilaian internal, JANGAN menambahkan field baru ke JSON.
-- Hook strength: 1-20
-- Emotional intensity: 1-20
-- Shareability/comment potential: 1-20
-- Standalone clarity: 1-20
-- Payoff/retention: 1-20
+PENILAIAN VIRAL_SCORE & EXPLAINABLE VIRALITY FACTORS:
+Nilai viral_score 1-100 dan sertakan objek "virality_factors" dengan rincian sub-skor (1-100) serta alasan:
+- hook_strength: 1-100 (seberapa kuat 3 detik pertama membuat orang berhenti scroll).
+- engagement_potential: 1-100 (peluang komentar, perdebatan, share, save, tag teman).
+- emotional_intensity: 1-100 (emosi, keresahan, tawa, haru, punchline, atau relatable).
+- pacing_score: 1-100 (kepadatan alur bicara, ketiadaan dead-air, ritme dialog).
+- virality_explanation: penjelasan 1-2 kalimat mengapa klip ini berpotensi viral.
 
 Panduan penilaian:
-- Hook strength: seberapa kuat 3 detik pertama membuat orang berhenti scroll.
-- Emotional intensity: seberapa kuat emosi, konflik, keresahan, lucu, haru, marah, kagum, atau relatable-nya.
-- Shareability/comment potential: seberapa besar peluang orang komentar, debat, tag teman, share, atau save.
-- Standalone clarity: seberapa mudah klip dipahami tanpa konteks video penuh.
-- Payoff/retention: seberapa jelas reward menonton sampai akhir, seperti punchline, insight, twist, kesimpulan, atau pelajaran praktis.
 - Jangan pilih klip dengan viral_score di bawah 70 kecuali jumlah momen bagus di transkrip sangat terbatas.
 
 KLASIFIKASI AKUN TUJUAN (UNTUK SETIAP KLIP):
@@ -882,6 +905,13 @@ STRUKTUR JSON WAJIB (Ikuti nama field ini secara kaku):
   {{
     "rank": 1,
     "viral_score": 95,
+    "virality_factors": {{
+      "hook_strength": 96,
+      "engagement_potential": 94,
+      "emotional_intensity": 92,
+      "pacing_score": 95,
+      "virality_explanation": "Hook sangat kuat di 3 detik pertama dengan punchline tajam yang memancing diskusi."
+    }},
     "start_time": 30.5,
     "end_time": 90.0,
     "hook_start_time": 30.5,
@@ -1140,19 +1170,13 @@ def analyze_with_nvidia(transkrip_lengkap: str, cfg) -> list[dict]:
 
 
 def analyze_with_ai(transkrip_lengkap: str, cfg) -> list[dict]:
-    """Dispatcher for AI analysis based on provider."""
-    provider = getattr(cfg, "ai_provider", "gemini")
-    
-    if provider == "nvidia":
-        if not cfg.api_key_nvidia:
-            print("⚠️ NVIDIA_API_KEY tidak ditemukan! Mencoba fallback ke Gemini...")
-        else:
-            try:
-                return analyze_with_nvidia(transkrip_lengkap, cfg)
-            except Exception as e:
-                print(f"⚠️ NVIDIA API gagal: {e}. Fallback ke Gemini...")
-    
-    return analyze_with_gemini(transkrip_lengkap, cfg)
+    """Dispatcher for AI analysis based on provider, fallback chain, or custom models."""
+    try:
+        from . import ai as ai_pkg
+        return ai_pkg.analyze_with_ai(transkrip_lengkap, cfg)
+    except Exception as exc:
+        print(f"⚠️ Multi-provider AI dispatch failed ({exc}). Fallback ke Gemini bawaan...")
+        return analyze_with_gemini(transkrip_lengkap, cfg)
 
 
 def analyze_with_gemini(
