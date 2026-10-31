@@ -167,6 +167,26 @@ def normalize_and_validate(hasil_json: list[dict]) -> list[dict]:
         )
         item["youtube_tags_final"] = item.get("keyword_tags", [])
 
+        # Virality Factors normalization & fallback derivation
+        vf = item.get("virality_factors")
+        if isinstance(vf, dict):
+            item["virality_factors"] = {
+                "hook_strength": int(vf.get("hook_strength", item["viral_score"])),
+                "engagement_potential": int(vf.get("engagement_potential", item["viral_score"])),
+                "emotional_intensity": int(vf.get("emotional_intensity", item["viral_score"])),
+                "pacing_score": int(vf.get("pacing_score", item["viral_score"])),
+                "virality_explanation": _normalize_spaces(str(vf.get("virality_explanation", item.get("alasan", "")))),
+            }
+        else:
+            base_s = int(item.get("viral_score", 80))
+            item["virality_factors"] = {
+                "hook_strength": min(100, max(0, base_s + 2)),
+                "engagement_potential": min(100, max(0, base_s - 1)),
+                "emotional_intensity": min(100, max(0, base_s)),
+                "pacing_score": min(100, max(0, base_s + 1)),
+                "virality_explanation": _normalize_spaces(str(item.get("alasan", "Klip berpotensi tinggi dengan hook kuat."))),
+            }
+
         # TikTok EN (existing behavior)
         item["tiktok_caption_final"] = _build_tiktok_caption(
             item.get("tiktok_caption", ""),
@@ -285,6 +305,15 @@ def print_preview(hasil_json: list[dict]) -> None:
         print(f"YT Tags           : {item['youtube_tags_final']}")
         print(f"TikTok EN         : {item['tiktok_caption_final']}")
         print(f"TikTok Caption ID : {item.get('tiktok_caption_id_final', '')}")
+        vf = item.get("virality_factors", {})
+        if vf:
+            print(
+                f"Virality Factors  : Hook: {vf.get('hook_strength', '?')}/100 | "
+                f"Engage: {vf.get('engagement_potential', '?')}/100 | "
+                f"Emotion: {vf.get('emotional_intensity', '?')}/100 | "
+                f"Pacing: {vf.get('pacing_score', '?')}/100"
+            )
+            print(f"Virality Reason   : {vf.get('virality_explanation', '')}")
 
 
 def save_metadata_preview(hasil_json: list[dict], path: str = "metadata_preview.json") -> None:
