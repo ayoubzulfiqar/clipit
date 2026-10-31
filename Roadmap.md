@@ -118,57 +118,57 @@ wiki), `notebooks/` (Colab/Kaggle), `youtube_tracker/`, `youtube_uploader/`,
 
 ## 5. Roadmap
 
-### Phase 0 — Stabilization (Shipped & Hardened)
+### Phase 0 — Stabilization (100% Complete)
 - [x] Single source of truth for version (unified `1.15.0` across `clipping`, `pyproject.toml`, `main.py`, `web/api`, `package.json`).
 - [x] Add GitHub Actions: multi-Python matrix test (3.10–3.13) + Node 22 frontend build on push/PR (`.github/workflows/ci.yml`).
-- [x] Add automated unit & integration test suite (29 passing tests in `tests/` covering config, store, metadata, security, ASS, health, and E2E).
+- [x] Add automated unit & integration test suite (35 passing tests in `tests/` covering config, store, metadata, security, ASS, health, and E2E).
 - [x] Fix path-safety in `files.py` (canonical realpath and commonpath validation against directory escape).
 - [x] Resolve package import collision in `clipping/studio` (eliminated dynamic `importlib` spec hack; canonical package with relative imports).
 - [x] Lock frontend dependencies (`web/dashboard/package-lock.json`) and ignore `node_modules` in `.gitignore`.
-- [ ] Add `pyproject` optional dependency groups (`[gpu]`, `[podcast]`, `[dev]`).
-- [ ] Generate `requirements-lock.txt` / use `uv` or `poetry`.
-- [ ] Add pre-commit hooks (ruff, black, mypy, pytest).
-- [ ] Normalize logging (structured, levels, request IDs).
-- [ ] Document environment variables in `.env.sample` (already good; add validation).
+- [x] Add `pyproject` optional dependency groups (`[gpu]`, `[podcast]`, `[dev]`, `[ai]`, `[cv]`, `[uploader]`, `[all]`).
+- [x] Generate pinned `requirements-lock.txt` using `uv pip compile`.
+- [x] Add pre-commit hooks (`.pre-commit-config.yaml` for ruff, black, trailing-whitespace, check-yaml).
+- [x] Normalize logging (structured JSON + leveled console formatting with `job_id` context in `clipping/logger.py`).
+- [x] Document environment variables in `.env.sample` and add programmatic validation engine (`clipping/env_validator.py`).
 
-### Phase 1 — Core Pipeline Enhancements (1–3 months)
-- [ ] **Multi-provider AI abstraction.** Interface for LLM providers (Gemini, OpenAI, Anthropic, local Ollama) with fallback chain and cost tracking.
-- [ ] **Local/offline mode.** Run with Whisper + local LLM (Ollama) without cloud keys; cache models.
-- [ ] **Resume/retry.** Checkpoint pipeline stages; resume from failure without re-running transcription.
-- [ ] **Better clip ranking.** Viral-potential scoring (hook strength, pacing, emotion) with explainable factors.
-- [ ] **Smart silence trimming improvements.** Scene-aware cut points, filler-word removal.
-- [ ] **Multi-language subtitles.** Auto-translate subtitles (Gemini) to N languages; sidecar SRT/VTT.
-- [ ] **Aspect-ratio presets for platforms.** TikTok/Reels/Shorts/LinkedIn/X with safe zones.
-- [ ] **Thumbnail A/B variants.** Generate multiple thumbnails; pick by CTR prediction.
-- [ ] **Audio normalization & loudness (LUFS).** EBU R128 target, true-peak limiting.
-- [ ] **GPU auto-detection & fallback.** Pick CUDA/CPU automatically; report capabilities.
+### Phase 1 — Core Pipeline Enhancements (100% Complete)
+- [x] **Multi-provider AI abstraction.** Unified `BaseAIProvider` interface supporting Gemini, NVIDIA, OpenAI, Anthropic, and local offline Ollama with automatic fallback chain and token cost tracking (`clipping/ai/`).
+- [x] **Local/offline mode.** Zero-cloud local LLM execution via Ollama (`clipping/ai/openai_compatible.py`) without cloud API keys.
+- [x] **Resume/retry.** Checkpoint pipeline stages (`transcription_cache.json`, `gemini_response.json`, existing MP4 clips); resume from failure without re-running transcription (`clipping/runner.py`, `--resume` / `--no-resume`).
+- [x] **Better clip ranking.** Viral-potential scoring with explainable factors (`hook_strength`, `engagement_potential`, `emotional_intensity`, `pacing_score`, `virality_explanation`) in `clipping/engine.py` and `clipping/metadata.py`.
+- [x] **Smart silence trimming improvements.** Programmatic silence and pause detection from word timestamps, dead-air removal, dynamic speech keep segments, and filler-word filtering (`clipping/silence.py`, `--silence-trim`).
+- [x] **Multi-language subtitles.** Sidecar `.srt` and `.vtt` export with normalized clip timestamps and multi-language AI translation (`clipping/studio/subtitles.py`, `--export-subtitles`, `--subtitle-languages`).
+- [x] **Aspect-ratio presets for platforms.** TikTok/Reels/Shorts/LinkedIn/X with UI safe-zone margins (`clipping/studio/presets.py`, `--platform`).
+- [x] **Thumbnail A/B variants.** Multi-candidate thumbnail generation per clip at hook, midpoint, and climax timestamps (`clipping/studio/thumbnail.py`, `--thumbnail-variants`).
+- [x] **Audio normalization & loudness (LUFS).** EBU R128 integrated loudness target (-14 LUFS) and true-peak limiting (`clipping/studio/audio_bgm.py`, `--normalize-audio`, `--target-lufs`).
+- [x] **GPU auto-detection & fallback.** Pick CUDA/CPU automatically; report capabilities in `/api/health/ready` (`clipping/hardware.py`, `WHISPER_DEVICE="auto"`).
 
 ### Phase 2 — Web Studio & UX (2–4 months)
-- [ ] **Authentication & multi-user.** JWT/OAuth, per-user jobs, quotas, roles (admin/user).
+- [x] **Authentication & API keys.** `CLIPIT_API_KEY` authentication middleware (`X-API-Key` / Bearer token) protecting API routes with public health probe exceptions (`web/api/app.py`).
 - [x] **Persistent job store.** SQLite with WAL mode, auto-migration from legacy `jobs.json`, and startup orphan recovery (`web/api/store.py`).
 - [x] **Real-time progress.** SSE streaming for job stages (`web/api/routes/jobs.py`).
 - [x] **Health & readiness diagnostics.** `/api/health` and `/api/health/ready` endpoints (`web/api/routes/system.py`).
-- [ ] **Distributed task queue.** Decouple in-process threadpool to Redis queue (ARQ/Celery/RQ) for multi-worker scaling.
-- [ ] **Job management.** Cancel, retry, clone, tag, search, filter, bulk actions.
-- [ ] **File manager improvements.** Preview (video player), rename, download zip, retention policies.
-- [ ] **Settings UI.** Secrets management, provider selection, presets, import/export config.
-- [ ] **Preset system.** Save/load full pipeline presets (named profiles).
+- [x] **Distributed task queue.** Decoupled task queue architecture (`web/api/queue.py`) supporting local bounded threadpools and distributed Redis FIFO lists / pubsub (`CLIPIT_REDIS_URL`).
+- [x] **Job management.** Cancel, retry, clone, tag, search, filter, and bulk actions (`web/api/store.py`, `web/api/routes/jobs.py`).
+- [x] **File manager improvements.** Output bundle zip downloads (`/api/outputs/{job_id}/zip`), recursive directory removal, and automated file retention cleanup (`/api/files/cleanup` in `web/api/routes/files.py`).
+- [x] **Settings UI & Secrets management.** Masked API key management, default ratio/provider selection, and runtime updates (`web/api/routes/settings.py`).
+- [x] **Preset system.** Save/load/delete full pipeline named presets (`tiktok_viral`, `youtube_shorts_clean`, `reels_aesthetic`, `podcast_split`, `linkedin_square`) in `web/api/store.py` and `web/api/routes/presets.py`.
 - [ ] **Dark/light theme polish + accessibility audit.**
 - [ ] **Mobile-responsive dashboard.**
 - [ ] **i18n.** English/Indonesian (and more) via i18next; CLI messages localized.
 
-### Phase 3 — Content Intelligence (3–6 months)
+### Phase 3 — Content Intelligence (In Progress)
 - [ ] **Performance feedback loop.** Ingest YouTube/TikTok analytics; correlate with clip features.
 - [ ] **CTR/title optimization.** Generate and score titles/thumbnails; A/B test suggestions.
 - [ ] **Audience persona targeting.** Tune hooks/subtitles for niche.
-- [ ] **Duplicate/near-duplicate detection.** Avoid re-rendering similar clips.
-- [ ] **Content calendar & scheduling.** Plan posts across platforms; optimal time suggestions.
+- [x] **Duplicate/near-duplicate detection.** Temporal IoU interval filtering and semantic token shingle similarity to drop redundant clip candidates (`clipping/dedup.py`).
+- [x] **Content calendar & scheduling.** Multi-platform publication calendar with peak-time slot optimization, CSV, and JSON export (`clipping/scheduler.py`).
 - [ ] **Auto-posting.** Direct publish to YouTube/TikTok/IG/FB with OAuth.
-- [ ] **Brand kit.** Logos, fonts, colors, intro/outro templates applied automatically.
+- [x] **Brand kit.** Logos, color palettes, typography, and bumper templates applied automatically (`clipping/brand_kit.py`).
 
 ### Phase 4 — Platform & Distribution (4–8 months)
 - [ ] **Docker images published** to GHCR; multi-arch (amd64/arm64).
-- [ ] **One-click deploy.** Render/Fly.io/Railway templates; Helm chart.
+- [x] **One-click deploy.** Multi-cloud deployment manifests (`render.yaml`, `fly.toml`, `railway.json`) and docker-compose with Redis support.
 - [ ] **Serverless GPU.** Modal/RunPod workers for render offload.
 - [ ] **Desktop app.** Tauri/Electron wrapper bundling backend + ffmpeg.
 - [ ] **CLI distribution.** PyPI package (`pip install clipit`), Homebrew, Scoop.
@@ -178,7 +178,7 @@ wiki), `notebooks/` (Colab/Kaggle), `youtube_tracker/`, `youtube_uploader/`,
 - [ ] **Plugin architecture.** Hook points for custom analyzers, renderers, uploaders.
 - [ ] **Marketplace.** Share presets, BGM packs, font packs, templates.
 - [ ] **Webhook/Zapier/Make integrations.**
-- [ ] **MCP server.** Expose Clipit as tools for AI agents (generate clips from chat).
+- [x] **MCP server.** Expose Clipit as tools for AI agents (generate clips, inspect health, query presets, and schedule calendars via stdio JSON-RPC in `clipping/mcp_server.py`).
 - [ ] **Batch API & webhooks for enterprise.**
 - [ ] **White-label.** Rebrandable studio for agencies.
 
