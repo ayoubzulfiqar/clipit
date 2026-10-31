@@ -16,7 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from clipping import __version__
-from .routes import files, jobs, presets, settings, system
+from .routes import batch, files, jobs, presets, settings, system
 from . import store
 
 
@@ -91,6 +91,7 @@ async def api_key_auth_middleware(request, call_next):
 
 # Routes
 app.include_router(jobs.router)
+app.include_router(batch.router)
 app.include_router(files.router)
 app.include_router(presets.router)
 app.include_router(settings.router)
