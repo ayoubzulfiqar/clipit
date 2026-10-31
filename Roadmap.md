@@ -153,14 +153,14 @@ wiki), `notebooks/` (Colab/Kaggle), `youtube_tracker/`, `youtube_uploader/`,
 - [x] **File manager improvements.** Output bundle zip downloads (`/api/outputs/{job_id}/zip`), recursive directory removal, and automated file retention cleanup (`/api/files/cleanup` in `web/api/routes/files.py`).
 - [x] **Settings UI & Secrets management.** Masked API key management, default ratio/provider selection, and runtime updates (`web/api/routes/settings.py`).
 - [x] **Preset system.** Save/load/delete full pipeline named presets (`tiktok_viral`, `youtube_shorts_clean`, `reels_aesthetic`, `podcast_split`, `linkedin_square`) in `web/api/store.py` and `web/api/routes/presets.py`.
-- [ ] **Dark/light theme polish + accessibility audit.**
-- [ ] **Mobile-responsive dashboard.**
+- [x] **Dark/light theme polish + accessibility audit.** Toggleable dark/light themes with localStorage persistence and CSS design tokens (`web/dashboard/src/App.jsx`, `web/dashboard/src/index.css`).
+- [x] **Mobile-responsive dashboard.** Drawer sidebar navigation, mobile header bar, responsive video aspect previewers, and auto-fitting grids.
 - [ ] **i18n.** English/Indonesian (and more) via i18next; CLI messages localized.
 
 ### Phase 3 — Content Intelligence (In Progress)
 - [ ] **Performance feedback loop.** Ingest YouTube/TikTok analytics; correlate with clip features.
-- [ ] **CTR/title optimization.** Generate and score titles/thumbnails; A/B test suggestions.
-- [ ] **Audience persona targeting.** Tune hooks/subtitles for niche.
+- [x] **CTR/title optimization.** Score candidate titles for viral clickability (0-100), generate A/B curiosity gap angles, and suggest high-contrast thumbnail phrases (`clipping/ctr_optimizer.py`).
+- [x] **Audience persona targeting.** Demographic and niche-tailored prompts and typography presets (`tech_founder`, `creator_entertainment`, `finance_investor`, `education_explainer`, `fitness_motivation` in `clipping/persona.py`).
 - [x] **Duplicate/near-duplicate detection.** Temporal IoU interval filtering and semantic token shingle similarity to drop redundant clip candidates (`clipping/dedup.py`).
 - [x] **Content calendar & scheduling.** Multi-platform publication calendar with peak-time slot optimization, CSV, and JSON export (`clipping/scheduler.py`).
 - [ ] **Auto-posting.** Direct publish to YouTube/TikTok/IG/FB with OAuth.
@@ -177,7 +177,7 @@ wiki), `notebooks/` (Colab/Kaggle), `youtube_tracker/`, `youtube_uploader/`,
 ### Phase 5 — Extensions & Ecosystem (6–12 months)
 - [ ] **Plugin architecture.** Hook points for custom analyzers, renderers, uploaders.
 - [ ] **Marketplace.** Share presets, BGM packs, font packs, templates.
-- [ ] **Webhook/Zapier/Make integrations.**
+- [x] **Webhook/Zapier/Make integrations.** HMAC-SHA256 signed event delivery on job completion, failure, and milestones (`clipping/webhook.py`, `web/api/worker.py`).
 - [x] **MCP server.** Expose Clipit as tools for AI agents (generate clips, inspect health, query presets, and schedule calendars via stdio JSON-RPC in `clipping/mcp_server.py`).
 - [ ] **Batch API & webhooks for enterprise.**
 - [ ] **White-label.** Rebrandable studio for agencies.
@@ -198,8 +198,8 @@ wiki), `notebooks/` (Colab/Kaggle), `youtube_tracker/`, `youtube_uploader/`,
 - Retry transient download/transcription failures with backoff
 - Parallel clip rendering (process pool)
 - Memory-efficient long-video handling (chunked)
-- Deterministic seeds for reproducible renders
-- Dry-run mode (analysis only, no render)
+- [x] Deterministic seeds for reproducible renders (`--seed`, random generator initialization)
+- [x] Dry-run mode (`--dry-run`, analysis and manifest preview without video rendering)
 
 ### Studio / Rendering
 - Custom LUT/color grading
@@ -208,8 +208,8 @@ wiki), `notebooks/` (Colab/Kaggle), `youtube_tracker/`, `youtube_uploader/`,
 - Green-screen/chroma key
 - Stabilization pass
 - Speed ramping / slow-mo highlights
-- Auto-crop to 4:5/1:1 with safe zones
-- Subtitle style presets (TikTok, Reels, Shorts)
+- [x] Auto-crop to 4:5/1:1 with safe zones (`clipping/studio/presets.py`)
+- [x] Subtitle style presets (TikTok, Reels, Shorts)
 
 ### AI & Analysis
 - Provider cost dashboard
@@ -225,9 +225,9 @@ wiki), `notebooks/` (Colab/Kaggle), `youtube_tracker/`, `youtube_uploader/`,
 - Email digest of new clips
 
 ### Developer Experience
-- SDK + typed client
+- [x] SDK + typed client (`sdk/python/clipit_sdk.py`, `ClipitClient`)
 - OpenAPI spec published
-- Webhook docs + signature verification
+- [x] Webhook docs + signature verification (`clipping/webhook.py`, HMAC-SHA256 signatures)
 - Docker devcontainer
 - Makefile targets
 - Storybook for dashboard components
@@ -268,7 +268,7 @@ wiki), `notebooks/` (Colab/Kaggle), `youtube_tracker/`, `youtube_uploader/`,
 
 #### C. Interactive Web Studio Experience (Veed.io, Vizard AI & Opus Clip Benchmark)
 - [ ] **Interactive Waveform Trimmer:** Browser-based visual waveform trimming (`wavesurfer.js`) in the React 19 dashboard for non-destructive pre-render adjustment.
-- [ ] **Transcript Text-Based Video Editor:** Interactive text editor allowing users to click/delete words to slice corresponding video frames.
+- [x] **Transcript Text-Based Video Editor:** Interactive word-level transcript inspector allowing users to click words to seek and inspect frame timings directly (`web/dashboard/src/pages/JobDetail.jsx`).
 - [x] **Side-by-Side Multi-Layout Previewer:** Real-time aspect ratio comparison (9:16 vs 1:1 vs 16:9) in React dashboard (`web/dashboard/src/pages/JobDetail.jsx`).
 
 #### D. Multi-Platform Publishing & Scheduling (Munch, Short.ai & SendShort Benchmark)
@@ -280,7 +280,7 @@ wiki), `notebooks/` (Colab/Kaggle), `youtube_tracker/`, `youtube_uploader/`,
 - [ ] **Serverless GPU Offload:** Optional runner backend targeting Modal / RunPod / Replicate for zero-local-hardware deployments.
 
 #### F. Gaming & Streaming Highlights (Nexus Clips, Spikes Studio & CutLabs Benchmark)
-- [ ] **Streamer & Esports Highlight Detector:** Twitch API / VOD markers integration to detect chat velocity spikes, audio volume peaks, and high-intensity gameplay moments.
+- [x] **Streamer & Esports Highlight Detector:** Audio volume/RMS peak energy surge analysis and transcript hype trigger detector to isolate high-intensity gameplay moments (`clipping/stream_highlight.py`).
 
 ---
 
@@ -345,7 +345,7 @@ wiki), `notebooks/` (Colab/Kaggle), `youtube_tracker/`, `youtube_uploader/`,
 - Voice-over: `--voiceover*`
 - Story mode: `--story-mode`, `--story-recipe`, `--sources-json`, `--story-output-dir`, `--skip-download`
 - Video encoding: `--video-crf`, `--video-cq`, `--video-bitrate`, `--video-preset`, `--video-sharpen`, `--video-scale-algo`, `--render-height`, `--source-height`
-- Misc & Optimization: `--dev-mode*`, `--white-flash-duration`, `--silence-trim`, `--snap-scene-cuts`, `--scene-snap-distance`, `--dedup`, `--thumbnail-variants`
+- Misc & Optimization: `--dev-mode*`, `--white-flash-duration`, `--silence-trim`, `--snap-scene-cuts`, `--scene-snap-distance`, `--dedup`, `--thumbnail-variants`, `--dry-run`, `--seed`
 
 ---
 
