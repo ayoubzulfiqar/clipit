@@ -35,6 +35,13 @@ from .typography import (
 from .audio_bgm import (
     get_local_bgm_file,
     build_bgm_filter,
+    build_audio_loudnorm_filter,
+)
+from .presets import (
+    PLATFORM_PRESETS,
+    get_platform_preset,
+    PlatformPreset,
+    SafeZoneMargins,
 )
 from .broll import (
     download_pexels_broll,
@@ -42,6 +49,11 @@ from .broll import (
 )
 from .subtitles import (
     buat_file_ass,
+    export_sidecar_subtitles,
+    generate_srt,
+    generate_vtt,
+    format_srt_timestamp,
+    format_vtt_timestamp,
 )
 from .effects import (
     siapkan_glitch_video,
@@ -55,6 +67,7 @@ from .transitions import (
 )
 from .thumbnail import (
     buat_thumbnail,
+    buat_thumbnail_variants,
 )
 from .render_hybrid import (
     buat_video_hybrid,
@@ -93,9 +106,19 @@ __all__ = [
     "siapkan_font_tipografi",
     "get_local_bgm_file",
     "build_bgm_filter",
+    "build_audio_loudnorm_filter",
+    "PLATFORM_PRESETS",
+    "get_platform_preset",
+    "PlatformPreset",
+    "SafeZoneMargins",
     "download_pexels_broll",
     "crop_center_broll",
     "buat_file_ass",
+    "export_sidecar_subtitles",
+    "generate_srt",
+    "generate_vtt",
+    "format_srt_timestamp",
+    "format_vtt_timestamp",
     "siapkan_glitch_video",
     "download_transition_raw",
     "download_all_transitions",
@@ -103,6 +126,7 @@ __all__ = [
     "prepare_transition_clip",
     "TMP_TRANSITION_POOL",
     "buat_thumbnail",
+    "buat_thumbnail_variants",
     "buat_video_hybrid",
     "buat_video_split_screen",
     "buat_video_camera_switch",
