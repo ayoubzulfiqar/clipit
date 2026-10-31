@@ -1,0 +1,28 @@
+app = "clipit-studio"
+primary_region = "iad"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+
+[[http_service.checks]]
+  grace_period = "15s"
+  interval = "30s"
+  method = "GET"
+  timeout = "5s"
+  path = "/api/health"
+
+[mounts]
+  source = "clipit_data"
+  destination = "/app/outputs"
+
+[vm]
+  cpu_kind = "shared"
+  cpus = 2
+  memory_mb = 4096
