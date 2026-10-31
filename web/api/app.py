@@ -120,3 +120,22 @@ async def shutdown_server():
     
     asyncio.create_task(_shutdown())
     return {"status": "shutting down", "message": "Server is stopping..."}
+
+
+def main():
+    """CLI entry point to launch the Clipit Studio web server."""
+    import argparse
+    import uvicorn
+
+    parser = argparse.ArgumentParser(description="Clipit Studio Web Server")
+    parser.add_argument("--host", default=os.getenv("CLIPIT_HOST", "0.0.0.0"), help="Host IP to bind (default: 0.0.0.0)")
+    parser.add_argument("--port", type=int, default=int(os.getenv("CLIPIT_PORT", "8000")), help="Port to bind (default: 8000)")
+    parser.add_argument("--reload", action="store_true", help="Enable auto-reload on code change")
+    args = parser.parse_args()
+
+    uvicorn.run("web.api.app:app", host=args.host, port=args.port, reload=args.reload)
+
+
+if __name__ == "__main__":
+    main()
+
