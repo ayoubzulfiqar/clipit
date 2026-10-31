@@ -16,7 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from clipping import __version__
-from .routes import jobs, files, settings, system
+from .routes import files, jobs, presets, settings, system
 from . import store
 
 
@@ -55,9 +55,44 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.middleware("http")
+async def api_key_auth_middleware(request, call_next):
+    """
+    Authenticate incoming API requests when CLIPIT_API_KEY is set.
+    Allows public health probes and docs to function unauthenticated.
+    """
+    configured_key = os.environ.get("CLIPIT_API_KEY", "").strip()
+    if not configured_key:
+        return await call_next(request)
+
+    path = request.url.path
+    if (
+        not path.startswith("/api/")
+        or path in {"/api/health", "/api/health/ready"}
+        or path.startswith("/docs")
+        or path.startswith("/openapi")
+    ):
+        return await call_next(request)
+
+    header_key = request.headers.get("X-API-Key")
+    auth_header = request.headers.get("Authorization", "")
+    bearer_key = auth_header.split("Bearer ")[-1].strip() if "Bearer " in auth_header else ""
+
+    if (header_key == configured_key) or (bearer_key == configured_key):
+        return await call_next(request)
+
+    from fastapi.responses import JSONResponse
+    return JSONResponse(
+        status_code=401,
+        content={"detail": "Unauthorized: Missing or invalid CLIPIT_API_KEY."},
+    )
+
+
 # Routes
 app.include_router(jobs.router)
 app.include_router(files.router)
+app.include_router(presets.router)
 app.include_router(settings.router)
 app.include_router(system.router)
 
