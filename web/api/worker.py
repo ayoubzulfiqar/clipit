@@ -370,6 +370,25 @@ def _run_pipeline_sync(job_id: str, payload: dict) -> None:
             percent=100.0,
         )
 
+        # Dispatch webhook on completion if configured
+        webhook_url = payload.get("webhook_url") or os.environ.get("CLIPIT_WEBHOOK_URL")
+        if webhook_url:
+            try:
+                from clipping.webhook import dispatch_webhook
+                dispatch_webhook(
+                    url=webhook_url,
+                    event="job.completed",
+                    data={
+                        "job_id": job_id,
+                        "status": "completed",
+                        "clips_count": len(clips),
+                        "download_urls": [c.download_url for c in clips],
+                    },
+                    secret=os.environ.get("CLIPIT_WEBHOOK_SECRET"),
+                )
+            except Exception as w_exc:
+                logger.warning("Webhook dispatch failed for job %s: %s", job_id, w_exc)
+
     except Exception as exc:
         tb = traceback.format_exc()
         error_msg = f"{type(exc).__name__}: {exc}"
@@ -383,6 +402,24 @@ def _run_pipeline_sync(job_id: str, payload: dict) -> None:
             percent=0.0,
         )
         print(f"[Worker] Job {job_id} failed:\n{tb}", file=sys.stderr)
+
+        # Dispatch webhook on failure if configured
+        webhook_url = payload.get("webhook_url") or os.environ.get("CLIPIT_WEBHOOK_URL")
+        if webhook_url:
+            try:
+                from clipping.webhook import dispatch_webhook
+                dispatch_webhook(
+                    url=webhook_url,
+                    event="job.failed",
+                    data={
+                        "job_id": job_id,
+                        "status": "failed",
+                        "error": error_msg,
+                    },
+                    secret=os.environ.get("CLIPIT_WEBHOOK_SECRET"),
+                )
+            except Exception as w_exc:
+                logger.warning("Webhook dispatch failed for job %s: %s", job_id, w_exc)
 
 
 async def submit_job(job_id: str, payload: dict) -> None:
