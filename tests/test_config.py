@@ -32,6 +32,29 @@ class TestConfig(unittest.TestCase):
         self.assertFalse(cfg.use_auto_bgm)
         self.assertFalse(cfg.use_hook_glitch)
 
+    def test_new_capability_flags(self):
+        """Test flags for scene snapping, dedup, sfx, semantic emojis, and palettes."""
+        args = [
+            "--url", "https://youtube.com/watch?v=sample",
+            "--snap-scene-cuts",
+            "--scene-snap-distance", "1.5",
+            "--dedup",
+            "--dedup-iou-threshold", "0.7",
+            "--semantic-emojis",
+            "--keyword-palette", "gold_amber",
+            "--use-sfx",
+            "--sfx-volume", "0.45",
+        ]
+        cfg = build_config(args)
+        self.assertTrue(cfg.snap_scene_cuts)
+        self.assertEqual(cfg.scene_snap_distance, 1.5)
+        self.assertTrue(cfg.dedup)
+        self.assertEqual(cfg.dedup_iou_threshold, 0.7)
+        self.assertTrue(cfg.semantic_emojis)
+        self.assertEqual(cfg.keyword_palette, "gold_amber")
+        self.assertTrue(cfg.use_sfx)
+        self.assertEqual(cfg.sfx_volume, 0.45)
+
     def test_url_slug_generation(self):
         """Test safe directory slug generation from URLs."""
         yt_slug = _make_url_slug("https://www.youtube.com/watch?v=dQw4w9WgXcQ", 0)
