@@ -12,8 +12,11 @@ from typing import Any, Dict
 from fastapi import APIRouter, Response, status
 
 from clipping import __version__
+from clipping.env_validator import validate_environment
+from clipping.hardware import detect_hardware
 from clipping.studio import detect_video_encoder
 from .. import store
+from ..queue import get_task_queue
 from .files import OUTPUTS_DIR, UPLOAD_DIR
 
 router = APIRouter(prefix="/api", tags=["system"])
@@ -100,6 +103,9 @@ async def health_readiness(response: Response):
     outputs_storage = _check_storage(OUTPUTS_DIR)
     uploads_storage = _check_storage(UPLOAD_DIR)
 
+    # Environment & API keys check
+    env_report = validate_environment(require_ai=False).to_dict()
+
     # Core readiness requirements
     is_ready = bool(
         binaries["ffmpeg"]["installed"]
@@ -116,9 +122,12 @@ async def health_readiness(response: Response):
         "version": __version__,
         "binaries": binaries,
         "encoder": video_encoder,
+        "hardware": detect_hardware().to_dict(),
+        "queue": get_task_queue().get_info(),
         "database": {"ok": db_ok, "error": db_error},
         "storage": {
             "outputs": outputs_storage,
             "uploads": uploads_storage,
         },
+        "environment": env_report,
     }
