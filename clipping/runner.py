@@ -10,6 +10,8 @@ import os
 
 from . import diarization as diarization_mod
 from . import engine, metadata, studio, hook_manager, voiceover
+from .dedup import filter_duplicate_candidates
+from .scene_detect import batch_snap_clips
 
 
 def run_pipeline(cfg, whisper_model_instance=None) -> list[dict]:
@@ -126,6 +128,18 @@ def run_pipeline(cfg, whisper_model_instance=None) -> list[dict]:
         with open(gemini_output_path, "w", encoding="utf-8") as f:
             json.dump(hasil_json, f, indent=4, ensure_ascii=False)
         print(f"💾 Raw AI response tersimpan di: {gemini_output_path}")
+
+    # Deduplication pass (if enabled)
+    if getattr(cfg, "dedup", False):
+        iou_thresh = getattr(cfg, "dedup_iou_threshold", 0.6)
+        text_thresh = getattr(cfg, "dedup_text_sim_threshold", 0.75)
+        hasil_json = filter_duplicate_candidates(hasil_json, iou_threshold=iou_thresh, text_sim_threshold=text_thresh)
+
+    # Natural camera scene-cut snapping pass (if enabled)
+    if getattr(cfg, "snap_scene_cuts", False) and os.path.exists(cfg.file_video_asli):
+        threshold = getattr(cfg, "scene_cut_detector_threshold", 0.35)
+        max_dist = getattr(cfg, "scene_snap_distance", 1.0)
+        hasil_json = batch_snap_clips(hasil_json, cfg.file_video_asli, threshold=threshold, max_distance=max_dist)
 
     # Step 4 — Metadata normalisation
     hasil_json = metadata.normalize_and_validate(hasil_json)
