@@ -6,6 +6,9 @@ from __future__ import annotations
 
 import os
 import shutil
+import tempfile
+import time
+import zipfile
 
 from fastapi import APIRouter, HTTPException, UploadFile, File
 from fastapi.responses import FileResponse
@@ -160,3 +163,87 @@ async def list_outputs(job_id: str) -> dict:
             })
 
     return {"job_id": job_id, "files": files, "total": len(files)}
+
+
+@router.get("/api/outputs/{job_id}/zip")
+async def download_job_zip(job_id: str):
+    """Bundle all output files for a job into a downloadable zip archive."""
+    job_dir = _validate_safe_child_path(OUTPUTS_DIR, job_id)
+    if not os.path.exists(job_dir) or not os.path.isdir(job_dir):
+        raise HTTPException(status_code=404, detail="Job output directory not found")
+
+    tmp_zip = tempfile.NamedTemporaryFile(delete=False, suffix=f"_{job_id}.zip")
+    tmp_zip.close()
+
+    try:
+        with zipfile.ZipFile(tmp_zip.name, "w", zipfile.ZIP_DEFLATED) as zf:
+            for root, _, filenames in os.walk(job_dir):
+                for fname in filenames:
+                    abs_file = os.path.join(root, fname)
+                    rel_name = os.path.relpath(abs_file, job_dir)
+                    zf.write(abs_file, arcname=rel_name)
+
+        return FileResponse(
+            tmp_zip.name,
+            media_type="application/zip",
+            filename=f"clipit_job_{job_id}.zip",
+        )
+    except Exception as exc:
+        if os.path.exists(tmp_zip.name):
+            os.remove(tmp_zip.name)
+        raise HTTPException(status_code=500, detail=f"Failed to generate zip: {exc}")
+
+
+@router.delete("/api/outputs/{job_id}")
+async def delete_job_outputs(job_id: str) -> dict:
+    """Delete an entire job's outputs directory from disk."""
+    job_dir = _validate_safe_child_path(OUTPUTS_DIR, job_id)
+    if not os.path.exists(job_dir):
+        raise HTTPException(status_code=404, detail="Job output directory not found")
+
+    shutil.rmtree(job_dir, ignore_errors=True)
+    return {"message": f"Outputs for job '{job_id}' deleted", "job_id": job_id}
+
+
+@router.post("/api/files/cleanup")
+async def cleanup_old_files(days: int = 7) -> dict:
+    """
+    Remove upload and output files older than N days to free disk space.
+    """
+    if days < 1:
+        raise HTTPException(status_code=400, detail="Days parameter must be at least 1")
+
+    now = time.time()
+    max_age_seconds = days * 86400
+    cleaned_uploads = 0
+    cleaned_outputs = 0
+
+    # 1. Clean uploads
+    for fname in os.listdir(UPLOAD_DIR):
+        fpath = os.path.join(UPLOAD_DIR, fname)
+        if os.path.isfile(fpath) and (now - os.path.getmtime(fpath)) > max_age_seconds:
+            try:
+                os.remove(fpath)
+                cleaned_uploads += 1
+            except Exception:
+                pass
+
+    # 2. Clean output directories
+    for dname in os.listdir(OUTPUTS_DIR):
+        dpath = os.path.join(OUTPUTS_DIR, dname)
+        # Skip jobs database files
+        if dname in {"jobs.sqlite3", "jobs.sqlite3-wal", "jobs.sqlite3-shm", "jobs.json"}:
+            continue
+        if os.path.isdir(dpath) and (now - os.path.getmtime(dpath)) > max_age_seconds:
+            try:
+                shutil.rmtree(dpath, ignore_errors=True)
+                cleaned_outputs += 1
+            except Exception:
+                pass
+
+    return {
+        "status": "success",
+        "retention_days": days,
+        "cleaned_uploads": cleaned_uploads,
+        "cleaned_outputs": cleaned_outputs,
+    }
