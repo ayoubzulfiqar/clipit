@@ -75,6 +75,16 @@ USE_ADVANCED_TEXT = False
 USE_ADVANCED_TEXT_ON_HOOK = False
 USE_KARAOKE_EFFECT = True
 
+RATIO_PRESET_MAP = {
+    "tiktok": "9:16",
+    "reels": "9:16",
+    "shorts": "9:16",
+    "instagram": "4:5",
+    "linkedin": "1:1",
+    "x": "1:1",
+    "youtube": "16:9",
+}
+
 GAYA_FONT_AKTIF = "HORMOZI"
 
 DAFTAR_FONT = {
@@ -171,7 +181,7 @@ BGM_DIR = os.path.abspath(os.path.join(BASE_DIR, "assets", "bgm"))
 
 # Whisper
 WHISPER_MODEL = "large-v3"
-WHISPER_DEVICE = "cuda"
+WHISPER_DEVICE = "auto"
 WHISPER_COMPUTE_TYPE = "float16"
 DOWNLOAD_SOURCE_HEIGHT = "max"
 VIDEO_QUALITY_CQ = 23
@@ -291,6 +301,12 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Output aspect ratio",
     )
     p.add_argument(
+        "--platform",
+        choices=["custom", "tiktok", "reels", "shorts", "instagram", "linkedin", "x", "youtube"],
+        default="custom",
+        help="Target platform preset (auto-configures aspect ratio and UI safe zones).",
+    )
+    p.add_argument(
         "--source-height",
         type=_parse_download_height,
         default=DOWNLOAD_SOURCE_HEIGHT,
@@ -326,6 +342,18 @@ def _build_parser() -> argparse.ArgumentParser:
         default=0.0,
         help="Start time in seconds for the custom hook video",
     )
+    p.add_argument(
+        "--resume",
+        action="store_true",
+        default=True,
+        help="Resume pipeline from saved stage checkpoints (transcription, AI analysis, rendered clips).",
+    )
+    p.add_argument(
+        "--no-resume",
+        dest="resume",
+        action="store_false",
+        help="Disable resume checkpoints; force re-downloading, re-transcribing, and re-rendering.",
+    )
     p.add_argument("--no-broll", action="store_true", help="Disable B-roll footage")
     p.add_argument("--no-hook", action="store_true", help="Disable hook glitch teaser")
     p.add_argument(
@@ -340,6 +368,24 @@ def _build_parser() -> argparse.ArgumentParser:
         choices=["ducking", "background"],
         default=BGM_MODE,
         help="BGM mixing mode: 'ducking' (sidechain compress — BGM auto-lowers during speech) or 'background' (constant low volume mix)",
+    )
+    p.add_argument(
+        "--normalize-audio",
+        action="store_true",
+        default=True,
+        help="Apply EBU R128 loudness normalization and true-peak limiting (-14 LUFS standard).",
+    )
+    p.add_argument(
+        "--no-normalize-audio",
+        dest="normalize_audio",
+        action="store_false",
+        help="Disable EBU R128 loudness normalization.",
+    )
+    p.add_argument(
+        "--target-lufs",
+        type=float,
+        default=-14.0,
+        help="Target integrated loudness in LUFS (default: -14.0 for TikTok/Shorts/Reels).",
     )
     p.add_argument(
         "--no-karaoke",
@@ -439,6 +485,24 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         default=USE_ADVANCED_TEXT_ON_HOOK,
         help="Enable advanced typography on hook",
+    )
+    p.add_argument(
+        "--export-subtitles",
+        choices=["none", "srt", "vtt", "ass", "all"],
+        default="all",
+        help="Export sidecar subtitle files alongside rendered clips (all: .srt, .vtt, .ass).",
+    )
+    p.add_argument(
+        "--subtitle-languages",
+        default="",
+        help="Comma-separated target language codes for sidecar subtitle translation (e.g. 'es,fr,de,id').",
+    )
+    p.add_argument(
+        "--thumbnail-variants",
+        type=int,
+        default=3,
+        choices=[1, 2, 3],
+        help="Number of A/B candidate thumbnails to generate per clip (1 to 3).",
     )
 
     # --- Whisper ---
@@ -653,6 +717,18 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         default=False,
         help="Instruct AI to aggressively trim silence/dead air from clips.",
+    )
+    hook_v2_group.add_argument(
+        "--silence-min-duration",
+        type=float,
+        default=0.5,
+        help="Minimum duration (seconds) of pause/dead-air to trim when silence trimming is enabled.",
+    )
+    hook_v2_group.add_argument(
+        "--silence-noise-db",
+        type=float,
+        default=-30.0,
+        help="Audio noise floor threshold in dB for silence detection (default: -30.0).",
     )
 
     # --- Story Clip Mode ---
@@ -873,7 +949,11 @@ def build_config(argv: list[str] | None = None) -> SimpleNamespace:
         yt_cookies=args.yt_cookies,
         cleanup_source=args.cleanup_source,
         jumlah_clip=args.clips,
-        pilihan_rasio=args.ratio,
+        resume=args.resume,
+        platform=args.platform,
+        normalize_audio=args.normalize_audio,
+        target_lufs=args.target_lufs,
+        pilihan_rasio=RATIO_PRESET_MAP.get(args.platform, args.ratio),
         download_source_height=args.source_height,
         render_output_height=args.render_height,
         # Konten & Hook
@@ -888,6 +968,8 @@ def build_config(argv: list[str] | None = None) -> SimpleNamespace:
         white_flash_duration=args.white_flash_duration,
         no_segment_trim=args.no_segment_trim,
         silence_trim=args.silence_trim,
+        silence_min_duration=args.silence_min_duration,
+        silence_noise_db=args.silence_noise_db,
         use_broll=not args.no_broll,
         use_hook_glitch=not args.no_hook,
         use_auto_bgm=not args.no_bgm,
@@ -909,6 +991,9 @@ def build_config(argv: list[str] | None = None) -> SimpleNamespace:
         daftar_font=DAFTAR_FONT,
         use_advanced_text=args.advanced_text,
         use_advanced_text_on_hook=args.advanced_text_hook,
+        export_subtitles=args.export_subtitles,
+        subtitle_languages=args.subtitle_languages,
+        thumbnail_variants=args.thumbnail_variants,
         # ASS position values
         ass_align_916=ASS_ALIGN_916,
         ass_margin_916=ASS_MARGIN_916,
