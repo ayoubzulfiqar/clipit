@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import {
   fetchJob,
@@ -27,6 +27,8 @@ function JobDetail() {
   const [tagInput, setTagInput] = useState('')
   const [activeRatio, setActiveRatio] = useState('9:16')
   const [busyAction, setBusyAction] = useState(false)
+  const [expandedTranscript, setExpandedTranscript] = useState({})
+  const videoRefs = useRef({})
 
   const reload = async () => {
     try {
@@ -131,6 +133,21 @@ function JobDetail() {
       await reload()
     } catch (err) {
       alert(`Gagal menghapus tag: ${err.message}`)
+    }
+  }
+
+  const toggleTranscript = (clipIdx) => {
+    setExpandedTranscript(prev => ({
+      ...prev,
+      [clipIdx]: !prev[clipIdx],
+    }))
+  }
+
+  const seekVideo = (clipIdx, seconds) => {
+    const vid = videoRefs.current[clipIdx]
+    if (vid) {
+      vid.currentTime = Math.max(0, seconds)
+      vid.play()
     }
   }
 
@@ -295,6 +312,7 @@ function JobDetail() {
                   maxHeight: '480px',
                 }}>
                   <video
+                    ref={el => { videoRefs.current[i] = el }}
                     style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                     controls
                     preload="metadata"
@@ -326,6 +344,52 @@ function JobDetail() {
                       </div>
                     </div>
                   )}
+
+                  {/* Interactive Text-Based Cue Inspector Button */}
+                  <div style={{ marginTop: '6px' }}>
+                    <button
+                      type="button"
+                      className="btn btn-ghost btn-sm"
+                      style={{ fontSize: '11px', width: '100%', textAlign: 'center', padding: '4px' }}
+                      onClick={() => toggleTranscript(i)}
+                    >
+                      {expandedTranscript[i] ? '▲ Sembunyikan Text Inspector' : '▼ 📝 Text Inspector & Waveform Seek'}
+                    </button>
+
+                    {expandedTranscript[i] && (
+                      <div style={{ marginTop: '8px', padding: '8px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '12px', maxHeight: '180px', overflowY: 'auto' }}>
+                        <div style={{ fontSize: '10px', color: 'var(--text-tertiary)', marginBottom: '6px', textTransform: 'uppercase', fontWeight: 600 }}>
+                          Klik kata untuk seek video player:
+                        </div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', lineHeight: 1.6 }}>
+                          {(clip.metadata?.segments || []).flatMap(s => s.words || []).length > 0 ? (
+                            (clip.metadata?.segments || []).flatMap(s => s.words || []).map((w, wIdx) => (
+                              <span
+                                key={wIdx}
+                                onClick={() => seekVideo(i, Math.max(0, w.start - (clip.start_time || 0)))}
+                                style={{
+                                  cursor: 'pointer',
+                                  padding: '1px 4px',
+                                  borderRadius: '3px',
+                                  background: 'var(--bg-tertiary)',
+                                  transition: 'background var(--transition-fast)',
+                                }}
+                                title={`Jump to ${w.start?.toFixed(1)}s`}
+                                onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--accent-dim)' }}
+                                onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--bg-tertiary)' }}
+                              >
+                                {w.word}
+                              </span>
+                            ))
+                          ) : (
+                            <span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>
+                              {clip.metadata?.description || clip.title || 'Transcript cues not attached.'}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
 
                   <div className="clip-actions" style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
                     <a href={clip.download_url} download className="btn btn-secondary btn-sm" style={{ flex: 1, textAlign: 'center' }}>
