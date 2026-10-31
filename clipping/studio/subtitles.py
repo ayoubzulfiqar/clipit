@@ -1,3 +1,4 @@
+import json
 import math
 import os
 import string
@@ -360,5 +361,186 @@ def buat_file_ass(
                     )
 
                 current_y += line["height"] + line_spacing
+
+
+# ==============================================================================
+# SIDECAR SUBTITLES (SRT & WebVTT) & MULTI-LANGUAGE TRANSLATION
+# ==============================================================================
+
+def format_srt_timestamp(seconds: float) -> str:
+    """Format floating seconds into standard SRT timestamp HH:MM:SS,mmm."""
+    secs = max(0.0, float(seconds))
+    hrs = int(secs // 3600)
+    mins = int((secs % 3600) // 60)
+    s = int(secs % 60)
+    ms = int(round((secs - int(secs)) * 1000))
+    if ms >= 1000:
+        s += 1
+        ms -= 1000
+    return f"{hrs:02d}:{mins:02d}:{s:02d},{ms:03d}"
+
+
+def format_vtt_timestamp(seconds: float) -> str:
+    """Format floating seconds into standard WebVTT timestamp HH:MM:SS.mmm."""
+    secs = max(0.0, float(seconds))
+    hrs = int(secs // 3600)
+    mins = int((secs % 3600) // 60)
+    s = int(secs % 60)
+    ms = int(round((secs - int(secs)) * 1000))
+    if ms >= 1000:
+        s += 1
+        ms -= 1000
+    return f"{hrs:02d}:{mins:02d}:{s:02d}.{ms:03d}"
+
+
+def build_clip_cues(data_segmen: list[dict], clip_start: float, clip_end: float) -> list[dict]:
+    """
+    Extract and re-timestamp subtitle segments relative to clip start (t=0.0).
+    """
+    cues = []
+    for seg in data_segmen:
+        s_start = float(seg.get("start", 0.0))
+        s_end = float(seg.get("end", 0.0))
+        text = str(seg.get("text", "")).strip()
+
+        if s_end <= clip_start or s_start >= clip_end or not text:
+            continue
+
+        rel_start = max(0.0, s_start - clip_start)
+        rel_end = max(0.0, min(clip_end, s_end) - clip_start)
+
+        if rel_end > rel_start:
+            cues.append({
+                "start": round(rel_start, 3),
+                "end": round(rel_end, 3),
+                "text": text,
+            })
+    return cues
+
+
+def generate_srt(cues: list[dict]) -> str:
+    """Render list of cues as standard SubRip (.srt) text."""
+    lines = []
+    for idx, cue in enumerate(cues, start=1):
+        lines.append(str(idx))
+        lines.append(f"{format_srt_timestamp(cue['start'])} --> {format_srt_timestamp(cue['end'])}")
+        lines.append(cue["text"])
+        lines.append("")
+    return "\n".join(lines)
+
+
+def generate_vtt(cues: list[dict]) -> str:
+    """Render list of cues as standard WebVTT (.vtt) text."""
+    lines = ["WEBVTT", ""]
+    for idx, cue in enumerate(cues, start=1):
+        lines.append(str(idx))
+        lines.append(f"{format_vtt_timestamp(cue['start'])} --> {format_vtt_timestamp(cue['end'])}")
+        lines.append(cue["text"])
+        lines.append("")
+    return "\n".join(lines)
+
+
+def translate_subtitle_cues(cues: list[dict], target_lang: str, ai_provider=None) -> list[dict]:
+    """
+    Translate cue texts into target_lang while strictly preserving timing intervals.
+    """
+    if not cues or not target_lang:
+        return cues
+
+    if ai_provider is not None:
+        try:
+            texts = [c["text"] for c in cues]
+            prompt = (
+                f"You are a professional subtitle translator. Translate the following subtitle lines into natural {target_lang}. "
+                "Keep translations concise and punchy for video subtitles. "
+                "Output ONLY a valid JSON array of strings corresponding 1:1 with each item in the input array:\n"
+                + json.dumps(texts, ensure_ascii=False)
+            )
+            if hasattr(ai_provider, "generate_text"):
+                resp = ai_provider.generate_text(prompt)
+            elif hasattr(ai_provider, "complete"):
+                resp = ai_provider.complete(prompt)
+            else:
+                resp = None
+
+            if resp:
+                clean_json = resp.strip()
+                if clean_json.startswith("```"):
+                    clean_json = clean_json.split("\n", 1)[1].rsplit("\n```", 1)[0].strip()
+                translated = json.loads(clean_json)
+                if isinstance(translated, list) and len(translated) == len(cues):
+                    new_cues = []
+                    for c, trans_t in zip(cues, translated):
+                        nc = dict(c)
+                        nc["text"] = str(trans_t).strip()
+                        new_cues.append(nc)
+                    return new_cues
+        except Exception:
+            pass
+
+    return cues
+
+
+def export_sidecar_subtitles(
+    data_segmen: list[dict],
+    clip_start: float,
+    clip_end: float,
+    base_video_path: str,
+    formats: tuple[str, ...] | list[str] = ("srt", "vtt"),
+    languages: list[str] | None = None,
+    ai_provider=None,
+) -> dict[str, str]:
+    """
+    Generate and save sidecar subtitle files (.srt and/or .vtt) alongside rendered video.
+
+    Returns:
+        Dict mapping format tags to written absolute file paths.
+    """
+    if not formats or "none" in formats:
+        return {}
+
+    cues = build_clip_cues(data_segmen, clip_start, clip_end)
+    if not cues:
+        return {}
+
+    base_no_ext = os.path.splitext(base_video_path)[0]
+    out_files: dict[str, str] = {}
+
+    want_all = "all" in formats
+    want_srt = want_all or "srt" in formats
+    want_vtt = want_all or "vtt" in formats
+
+    # 1. Primary video subtitle
+    if want_srt:
+        srt_path = f"{base_no_ext}.srt"
+        with open(srt_path, "w", encoding="utf-8") as f:
+            f.write(generate_srt(cues))
+        out_files["srt"] = srt_path
+
+    if want_vtt:
+        vtt_path = f"{base_no_ext}.vtt"
+        with open(vtt_path, "w", encoding="utf-8") as f:
+            f.write(generate_vtt(cues))
+        out_files["vtt"] = vtt_path
+
+    # 2. Translated subtitle sidecars
+    if languages:
+        for lang in languages:
+            lang = lang.strip().lower()
+            if not lang:
+                continue
+            translated_cues = translate_subtitle_cues(cues, target_lang=lang, ai_provider=ai_provider)
+            if want_srt:
+                trans_srt_path = f"{base_no_ext}_{lang}.srt"
+                with open(trans_srt_path, "w", encoding="utf-8") as f:
+                    f.write(generate_srt(translated_cues))
+                out_files[f"srt_{lang}"] = trans_srt_path
+            if want_vtt:
+                trans_vtt_path = f"{base_no_ext}_{lang}.vtt"
+                with open(trans_vtt_path, "w", encoding="utf-8") as f:
+                    f.write(generate_vtt(translated_cues))
+                out_files[f"vtt_{lang}"] = trans_vtt_path
+
+    return out_files
 
 
