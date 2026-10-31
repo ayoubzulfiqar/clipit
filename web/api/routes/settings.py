@@ -10,6 +10,7 @@ import subprocess
 
 from fastapi import APIRouter
 
+from clipping import __version__
 from ..models import SettingsRequest, SettingsResponse, SystemHealthResponse
 from .. import store as job_store
 from .. import worker
@@ -101,7 +102,7 @@ async def health_check() -> SystemHealthResponse:
     """System health check."""
     return SystemHealthResponse(
         status="ok",
-        version="1.12.0",
+        version=__version__,
         gpu_available=_check_gpu(),
         ffmpeg_available=_check_ffmpeg(),
         jobs_running=job_store.get_running_count(),
