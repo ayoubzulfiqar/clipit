@@ -96,9 +96,14 @@ Even if you don't code, you can still help:
 
 ---
 
-## License
+## License & Governance
 
-This project is **open source**. Feel free to use, modify, and distribute.
+This project is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0-or-later)**.
+Please review our root governance documents:
+- [Contributing Guidelines](file:///home/sensei/Projects/backend/clipit/CONTRIBUTING.md)
+- [Code of Conduct](file:///home/sensei/Projects/backend/clipit/CODE_OF_CONDUCT.md)
+- [Security Policy](file:///home/sensei/Projects/backend/clipit/SECURITY.md)
+- [Accessibility Statement](file:///home/sensei/Projects/backend/clipit/ACCESSIBILITY.md)
 
 ---
 
