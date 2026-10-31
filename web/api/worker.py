@@ -17,6 +17,7 @@ from typing import Optional
 
 from .config_adapter import build_config_from_payload
 from .models import ClipDetail, JobStatus
+from .queue import get_task_queue
 from . import store
 
 # Semaphore to control max concurrent jobs
@@ -386,16 +387,7 @@ def _run_pipeline_sync(job_id: str, payload: dict) -> None:
 
 async def submit_job(job_id: str, payload: dict) -> None:
     """
-    Submit a job to the background worker queue.
-
-    Uses a semaphore to limit concurrency and runs the pipeline
-    in a thread pool to avoid blocking the async event loop.
+    Submit a job to the background worker queue (local threadpool or distributed Redis).
     """
-    async def _run():
-        async with _semaphore:
-            loop = asyncio.get_event_loop()
-            await loop.run_in_executor(
-                _executor, _run_pipeline_sync, job_id, payload
-            )
-
-    asyncio.create_task(_run())
+    tq = get_task_queue()
+    await tq.submit_job(job_id, payload, _run_pipeline_sync)
