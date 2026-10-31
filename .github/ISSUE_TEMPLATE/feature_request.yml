@@ -1,0 +1,44 @@
+name: Feature Request
+description: Propose a new feature, pipeline enhancement, or workflow idea for Clipit
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        We appreciate your ideas to make Clipit better!
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement or Use Case
+      description: Is your feature request related to a specific problem or workflow bottleneck?
+      placeholder: I want to be able to... because...
+    validations:
+      required: true
+  - type: textarea
+    id: proposed_solution
+    attributes:
+      label: Proposed Solution / Experience
+      description: Describe your proposed solution or feature in detail.
+      placeholder: Add a new flag or UI toggle that allows...
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Any alternative solutions or features you've considered or seen in other tools (e.g. Opus Clip, Submagic, Veed.io).
+  - type: dropdown
+    id: category
+    attributes:
+      label: Feature Category
+      options:
+        - AI Intelligence & Clip Scoring
+        - Video Framing, Split-Screen & Zoom
+        - Subtitles, Typography & Emojis
+        - Audio, BGM & Sound Effects (SFX)
+        - Web Studio GUI & Usability
+        - Platform Distribution, API & Cloud Offload
+        - Other
+    validations:
+      required: true

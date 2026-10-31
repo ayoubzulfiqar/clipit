@@ -1,0 +1,18 @@
+name: Question & Support
+description: Ask a question about usage, deployment, or configuration
+title: "[Question]: "
+labels: ["question"]
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: Your Question
+      description: What would you like help with?
+      placeholder: How do I configure...
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context & Attempts
+      description: What documentation have you checked, or what commands have you tried so far?

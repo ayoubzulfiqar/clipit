@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: GitHub Discussions
+    url: https://github.com/ayoubzulfiqar/clipit/discussions
+    about: Ask questions, share your generated clips, and discuss workflows with the community.
+  - name: Security Vulnerability Reporting
+    url: https://github.com/ayoubzulfiqar/clipit/blob/main/SECURITY.md
+    about: Please report security vulnerabilities privately according to our security policy.

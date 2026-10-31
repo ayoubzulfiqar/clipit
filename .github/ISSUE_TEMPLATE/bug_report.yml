@@ -1,0 +1,61 @@
+name: Bug Report
+description: Create a report to help us improve Clipit
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting an issue! Please check existing issues first before submitting.
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is.
+      placeholder: Describe the problem...
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Exact steps to reproduce the behavior.
+      placeholder: |
+        1. Run command '...'
+        2. Set flag '...'
+        3. See error '...'
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What you expected to happen.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Console Output / Logs
+      description: Please copy and paste any relevant terminal output or tracebacks (redact private API keys!).
+      render: shell
+  - type: dropdown
+    id: execution_mode
+    attributes:
+      label: How are you running Clipit?
+      options:
+        - CLI (main.py / clipit)
+        - Web Studio (FastAPI + React 19)
+        - Docker / Docker Compose
+        - Desktop App (desktop/launcher.py)
+        - Python SDK (sdk/python)
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment Info
+      description: Operating system, Python version, and FFmpeg version (`ffmpeg -version`).
+      placeholder: Ubuntu 24.04, Python 3.11, FFmpeg 6.1 (NVIDIA RTX 4090)
+    validations:
+      required: true
