@@ -8,20 +8,87 @@ license = { text = "MIT" }
 authors = [{ name = "Ayoub Zulfiqar", email = "contact@ayoubzulfiqar.com" }]
 dependencies = [
     "yt-dlp[default]",
-    "faster-whisper",
-    "google-genai",
-    "mediapipe",
-    "opencv-python",
-    "Pillow",
     "requests",
     "python-dotenv",
+    "Pillow",
+    "numpy<2.0.0",
+    "fastapi",
+    "uvicorn",
+    "python-multipart",
+    "pydantic>=2.0.0",
+    "gdown",
+]
+
+[project.optional-dependencies]
+ai = [
+    "google-genai",
+    "faster-whisper",
+    "edge-tts",
+]
+cv = [
+    "opencv-python",
+    "mediapipe",
+    "ultralytics",
+]
+gpu = [
+    "torch>=2.0.0",
+    "torchaudio>=2.0.0",
+]
+podcast = [
+    "pyannote.audio>=3.1.0",
+    "torch>=2.0.0",
+    "torchaudio>=2.0.0",
+]
+uploader = [
     "google-api-python-client",
     "google-auth",
     "google-auth-oauthlib",
     "google-auth-httplib2",
+]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio",
+    "ruff>=0.1.0",
+    "black>=23.0.0",
+    "mypy>=1.0.0",
+]
+all = [
+    "google-genai",
+    "faster-whisper",
+    "edge-tts",
+    "opencv-python",
+    "mediapipe",
     "ultralytics",
-    "gdown",
+    "pyannote.audio>=3.1.0",
+    "torch>=2.0.0",
+    "torchaudio>=2.0.0",
+    "google-api-python-client",
+    "google-auth",
+    "google-auth-oauthlib",
+    "google-auth-httplib2",
+    "pytest>=7.0.0",
+    "pytest-asyncio",
+    "ruff>=0.1.0",
+    "black>=23.0.0",
+    "mypy>=1.0.0",
 ]
 
 [project.scripts]
 clipping = "main:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.black]
+line-length = 100
+target-version = ['py310', 'py311', 'py312', 'py313']
