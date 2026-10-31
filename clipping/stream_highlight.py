@@ -17,12 +17,12 @@ from clipping.logger import get_logger
 
 logger = get_logger("clipping.stream_highlight")
 
-HYPE_TRIGGERS = {
-    "let's go", "lets go", "no way", "oh my god", "omg", "insane",
-    "clutch", "headshot", "ace", "what", "holy shit", "holy", "unbelievable",
-    "kill", "gg", "pog", "poggers", "clip that", "clip it", "win", "winner",
-    "gila", "mati", "menang", "anjir", "gokil", "parah",
-}
+HYPE_TRIGGERS = (
+    "unbelievable", "holy shit", "oh my god", "clip that", "headshot",
+    "poggers", "let's go", "lets go", "clip it", "winner", "menang",
+    "no way", "insane", "clutch", "gokil", "parah", "anjir", "what",
+    "holy", "kill", "mati", "gila", "pog", "win", "omg", "ace", "gg",
+)
 
 
 def extract_rms_volume_stats(
