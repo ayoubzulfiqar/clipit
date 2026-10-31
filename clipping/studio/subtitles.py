@@ -28,6 +28,8 @@ download_google_font = typography.download_google_font
 register_fonts_for_libass = typography.register_fonts_for_libass
 siapkan_font_tipografi = typography.siapkan_font_tipografi
 
+from clipping.emoji_engine import get_palette_color, lookup_semantic_emoji
+
 def buat_file_ass(
     data_segmen,
     start_clip,
@@ -87,6 +89,9 @@ def buat_file_ass(
 
     font_utama = font_utama_dict["nama"]
     font_khusus = font_khusus_dict["nama"]
+
+    enable_emojis = getattr(cfg, "semantic_emojis", False)
+    palette_name = getattr(cfg, "keyword_palette", "modern")
 
     scale_base_khusus = (
         cfg.scale_kata_khusus_916 if _is_vertical_ratio(rasio) else cfg.scale_kata_khusus_169
@@ -224,6 +229,12 @@ def buat_file_ass(
                 word_clean = w_dict["word"].lower().strip(string.punctuation)
                 plan = typo_dict.get(word_clean)
 
+                display_word = w_dict["word"]
+                if enable_emojis:
+                    em = lookup_semantic_emoji(word_clean)
+                    if em:
+                        display_word = f"{display_word} {em}"
+
                 if plan:
                     w_style = plan.get("style", "khusus")
                     w_scale = get_scale_value(plan.get("scale_level", 2))
@@ -231,9 +242,9 @@ def buat_file_ass(
 
                     pil_font = get_cached_font(is_khusus, w_scale)
                     raw_w = (
-                        pil_font.getlength(w_dict["word"])
+                        pil_font.getlength(display_word)
                         if hasattr(pil_font, "getlength")
-                        else len(w_dict["word"]) * 20
+                        else len(display_word) * 20
                     )
                     w_len = raw_w * TIGHTNESS
                     h_len = font_sz * (w_scale / 100.0)
@@ -241,9 +252,9 @@ def buat_file_ass(
                     w_scale = 100
                     pil_font = get_cached_font(False, w_scale)
                     raw_w = (
-                        pil_font.getlength(w_dict["word"])
+                        pil_font.getlength(display_word)
                         if hasattr(pil_font, "getlength")
-                        else len(w_dict["word"]) * 15
+                        else len(display_word) * 15
                     )
                     w_len = raw_w * TIGHTNESS
                     h_len = font_sz
@@ -263,7 +274,8 @@ def buat_file_ass(
                 x_offset = current_w if not current_line else current_w + space_width
                 current_line.append(
                     {
-                        "text": w_dict["word"],
+                        "text": display_word,
+                        "word_clean": word_clean,
                         "plan": plan,
                         "w": w_len,
                         "h": h_len,
@@ -309,6 +321,9 @@ def buat_file_ass(
                     w_appear_ms = int((w_data["start"] - seg_s) * 1000)
                     w_end_ms = int((w_data["end"] - seg_s) * 1000)
 
+                    w_clean = w_data.get("word_clean", "")
+                    highlight_color = get_palette_color(palette_name, w_clean)
+
                     if w_data["plan"]:
                         w_style = w_data["plan"].get("style", "khusus")
                         w_anim = w_data["plan"].get("animasi", "bounce_pop")
@@ -319,7 +334,7 @@ def buat_file_ass(
                             font_khusus_dict if w_style == "khusus" else font_utama_dict
                         )
                         f_tag = build_font_tag(font_info)
-                        c_tag = f"\\c{warna_khusus}"
+                        c_tag = f"\\c{highlight_color}" if palette_name != "modern" or w_clean else f"\\c{warna_khusus}"
                     else:
                         w_anim = "none"
                         target_scale = 100
@@ -333,7 +348,7 @@ def buat_file_ass(
                     if pakai_karaoke:
                         pos_tag = f"\\pos({int(word_x)},{int(line_y)})"
                         c_tag = "\\c&HFFFFFF&"
-                        anim_tag = f"\\fscx{target_scale}\\fscy{target_scale}\\t({t_start},{t_start},\\c&H00FFFF&)\\t({w_end_ms},{w_end_ms},\\c&HFFFFFF&)"
+                        anim_tag = f"\\fscx{target_scale}\\fscy{target_scale}\\t({t_start},{t_start},\\c{highlight_color})\\t({w_end_ms},{w_end_ms},\\c&HFFFFFF&)"
                     else:
                         if w_anim == "stagger_up":
                             y_start = int(line_y + 30)
