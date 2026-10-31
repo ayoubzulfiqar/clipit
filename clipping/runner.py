@@ -12,6 +12,13 @@ from . import diarization as diarization_mod
 from . import engine, metadata, studio, hook_manager, voiceover
 from .dedup import filter_duplicate_candidates
 from .scene_detect import batch_snap_clips
+from .plugins import (
+    HOOK_CLIPS_SCORED,
+    HOOK_DOWNLOAD_COMPLETE,
+    HOOK_RENDER_COMPLETE,
+    HOOK_TRANSCRIBE_COMPLETE,
+    trigger_hook,
+)
 
 
 def run_pipeline(cfg, whisper_model_instance=None) -> list[dict]:
@@ -57,6 +64,8 @@ def run_pipeline(cfg, whisper_model_instance=None) -> list[dict]:
             source_platform=source_platform,
             yt_cookies=getattr(cfg, "yt_cookies", None),
         )
+
+    trigger_hook(HOOK_DOWNLOAD_COMPLETE, {"video_path": cfg.file_video_asli, "cfg": cfg})
 
     # Step 2 — Transcribe
     transkrip_lengkap = ""
@@ -118,6 +127,11 @@ def run_pipeline(cfg, whisper_model_instance=None) -> list[dict]:
         except Exception as e:
             print(f"⚠️ Gagal menyimpan transcription_cache.json: {e}")
 
+    trigger_hook(
+        HOOK_TRANSCRIBE_COMPLETE,
+        {"transcript": transkrip_lengkap, "segments": data_segmen, "cfg": cfg},
+    )
+
     # Step 3 — Gemini AI analysis
     gemini_output_path = os.path.join(cfg.outputs_dir, "gemini_response.json")
     
@@ -144,6 +158,8 @@ def run_pipeline(cfg, whisper_model_instance=None) -> list[dict]:
         threshold = getattr(cfg, "scene_cut_detector_threshold", 0.35)
         max_dist = getattr(cfg, "scene_snap_distance", 1.0)
         hasil_json = batch_snap_clips(hasil_json, cfg.file_video_asli, threshold=threshold, max_distance=max_dist)
+
+    trigger_hook(HOOK_CLIPS_SCORED, {"clips": hasil_json, "cfg": cfg})
 
     # Step 4 — Metadata normalisation
     hasil_json = metadata.normalize_and_validate(hasil_json)
@@ -359,6 +375,7 @@ def run_pipeline(cfg, whisper_model_instance=None) -> list[dict]:
         f"\n💾 Render manifest disimpan ke {manifest_path} ({len(render_manifest)} item)"
     )
 
+    trigger_hook(HOOK_RENDER_COMPLETE, {"render_manifest": render_manifest, "cfg": cfg})
 
     return render_manifest
 
