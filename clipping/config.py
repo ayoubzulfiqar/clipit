@@ -370,6 +370,18 @@ def _build_parser() -> argparse.ArgumentParser:
         help="BGM mixing mode: 'ducking' (sidechain compress — BGM auto-lowers during speech) or 'background' (constant low volume mix)",
     )
     p.add_argument(
+        "--use-sfx",
+        action="store_true",
+        default=False,
+        help="Enable dynamic sound effects (whoosh, riser, impact) on transitions and hooks.",
+    )
+    p.add_argument(
+        "--sfx-volume",
+        type=float,
+        default=0.35,
+        help="Volume of synthesized/overlay sound effects (default: 0.35).",
+    )
+    p.add_argument(
         "--normalize-audio",
         action="store_true",
         default=True,
@@ -503,6 +515,18 @@ def _build_parser() -> argparse.ArgumentParser:
         default=3,
         choices=[1, 2, 3],
         help="Number of A/B candidate thumbnails to generate per clip (1 to 3).",
+    )
+    p.add_argument(
+        "--semantic-emojis",
+        action="store_true",
+        default=False,
+        help="Automatically detect semantic keywords in transcript and inject contextual emojis.",
+    )
+    p.add_argument(
+        "--keyword-palette",
+        default="modern",
+        choices=["modern", "gold_amber", "neon_cyber", "bold_red", "classic"],
+        help="Color palette for keyword highlights in subtitles (default: 'modern').",
     )
 
     # --- Whisper ---
@@ -729,6 +753,42 @@ def _build_parser() -> argparse.ArgumentParser:
         type=float,
         default=-30.0,
         help="Audio noise floor threshold in dB for silence detection (default: -30.0).",
+    )
+    hook_v2_group.add_argument(
+        "--snap-scene-cuts",
+        action="store_true",
+        default=False,
+        help="Snap clip start/end boundaries to natural camera cuts using FFmpeg scene detection.",
+    )
+    hook_v2_group.add_argument(
+        "--scene-snap-distance",
+        type=float,
+        default=1.0,
+        help="Maximum distance (in seconds) to snap a clip boundary to the nearest scene cut (default: 1.0).",
+    )
+    hook_v2_group.add_argument(
+        "--scene-cut-detector-threshold",
+        type=float,
+        default=0.35,
+        help="Sensitivity threshold for natural camera cut detection between 0.0 and 1.0 (default: 0.35).",
+    )
+    hook_v2_group.add_argument(
+        "--dedup",
+        action="store_true",
+        default=False,
+        help="Deduplicate clips using temporal IoU and transcript similarity filtering.",
+    )
+    hook_v2_group.add_argument(
+        "--dedup-iou-threshold",
+        type=float,
+        default=0.6,
+        help="Temporal IoU threshold to consider two clips overlapping duplicates (default: 0.6).",
+    )
+    hook_v2_group.add_argument(
+        "--dedup-text-sim-threshold",
+        type=float,
+        default=0.75,
+        help="Transcript Jaccard similarity threshold for semantic deduplication (default: 0.75).",
     )
 
     # --- Story Clip Mode ---
@@ -970,6 +1030,12 @@ def build_config(argv: list[str] | None = None) -> SimpleNamespace:
         silence_trim=args.silence_trim,
         silence_min_duration=args.silence_min_duration,
         silence_noise_db=args.silence_noise_db,
+        snap_scene_cuts=args.snap_scene_cuts,
+        scene_snap_distance=args.scene_snap_distance,
+        scene_cut_detector_threshold=args.scene_cut_detector_threshold,
+        dedup=args.dedup,
+        dedup_iou_threshold=args.dedup_iou_threshold,
+        dedup_text_sim_threshold=args.dedup_text_sim_threshold,
         use_broll=not args.no_broll,
         use_hook_glitch=not args.no_hook,
         use_auto_bgm=not args.no_bgm,
@@ -994,6 +1060,8 @@ def build_config(argv: list[str] | None = None) -> SimpleNamespace:
         export_subtitles=args.export_subtitles,
         subtitle_languages=args.subtitle_languages,
         thumbnail_variants=args.thumbnail_variants,
+        semantic_emojis=args.semantic_emojis,
+        keyword_palette=args.keyword_palette,
         # ASS position values
         ass_align_916=ASS_ALIGN_916,
         ass_margin_916=ASS_MARGIN_916,
@@ -1008,11 +1076,13 @@ def build_config(argv: list[str] | None = None) -> SimpleNamespace:
         url_font_thumbnail=URL_FONT_THUMBNAIL,
         url_glitch_video=URL_GLITCH_VIDEO,
         url_mediapipe_model=URL_MEDIAPIPE_MODEL,
-        # BGM
+        # BGM & SFX
         bgm_base_volume=BGM_BASE_VOLUME,
         bgm_mode=args.bgm_mode,
         bgm_moods=BGM_MOODS,
         bgm_dir=BGM_DIR,
+        use_sfx=args.use_sfx,
+        sfx_volume=args.sfx_volume,
         # Whisper
         use_dlp_subs=args.use_dlp_subs,
         whisper_model=args.whisper_model,
