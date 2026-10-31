@@ -74,7 +74,10 @@ all = [
 ]
 
 [project.scripts]
+clipit = "main:main"
 clipping = "main:main"
+clipit-api = "web.api.app:main"
+clipit-web = "web.api.app:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
