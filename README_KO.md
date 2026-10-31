@@ -88,6 +88,6 @@ python main.py --story-mode --story-recipe story_recipe.json --sources-json sour
 
 ## 📄 라이선스
 
-본 프로젝트는 MIT License 하에 배포됩니다 — [LICENSE](LICENSE) 파일 참조.
+본 프로젝트는 GNU AGPLv3 License 하에 배포됩니다 — [LICENSE](LICENSE) 파일 참조.
 
 Copyright (c) 2026 Ayoub Zulfiqar
