@@ -62,6 +62,7 @@ def _init_db() -> None:
                 clips TEXT,
                 error TEXT,
                 log TEXT,
+                tags TEXT,
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL
             );
@@ -69,6 +70,112 @@ def _init_db() -> None:
         )
         conn.execute("CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status);")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_jobs_created_at ON jobs(created_at);")
+
+        # Ensure 'tags' column exists for existing SQLite tables
+        cols = [c[1] for c in conn.execute("PRAGMA table_info(jobs);").fetchall()]
+        if "tags" not in cols:
+            conn.execute("ALTER TABLE jobs ADD COLUMN tags TEXT;")
+
+        # Presets table
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS presets (
+                name TEXT PRIMARY KEY,
+                description TEXT,
+                config TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+            """
+        )
+
+        # Seed default built-in presets if empty
+        cur_p = conn.execute("SELECT COUNT(*) FROM presets;")
+        if cur_p.fetchone()[0] == 0:
+            default_presets = [
+                (
+                    "tiktok_viral",
+                    "Aggressive viral TikTok setup with Hormozi typography, auto BGM ducking, and 9:16 safe zones.",
+                    json.dumps({
+                        "pilihan_rasio": "9:16",
+                        "platform": "tiktok",
+                        "gaya_font_aktif": "HORMOZI",
+                        "use_auto_bgm": True,
+                        "bgm_mode": "ducking",
+                        "use_hook_glitch": True,
+                        "use_karaoke_effect": True,
+                        "normalize_audio": True,
+                        "target_lufs": -14.0,
+                    }),
+                    _now().isoformat(),
+                    _now().isoformat(),
+                ),
+                (
+                    "youtube_shorts_clean",
+                    "Clean high-retention YouTube Shorts preset with Storyteller typography and EBU R128 audio.",
+                    json.dumps({
+                        "pilihan_rasio": "9:16",
+                        "platform": "shorts",
+                        "gaya_font_aktif": "STORYTELLER",
+                        "use_auto_bgm": True,
+                        "bgm_mode": "background",
+                        "use_hook_glitch": False,
+                        "use_karaoke_effect": True,
+                        "normalize_audio": True,
+                        "target_lufs": -14.0,
+                    }),
+                    _now().isoformat(),
+                    _now().isoformat(),
+                ),
+                (
+                    "reels_aesthetic",
+                    "Aesthetic Instagram Reels style with Cinematic typography and smooth edge glow.",
+                    json.dumps({
+                        "pilihan_rasio": "9:16",
+                        "platform": "reels",
+                        "gaya_font_aktif": "CINEMATIC",
+                        "use_auto_bgm": True,
+                        "bgm_mode": "ducking",
+                        "use_karaoke_effect": True,
+                        "edge_glow": "smooth",
+                        "normalize_audio": True,
+                    }),
+                    _now().isoformat(),
+                    _now().isoformat(),
+                ),
+                (
+                    "podcast_split",
+                    "Two-speaker podcast mode with Pyannote diarization and dynamic split-screen layout.",
+                    json.dumps({
+                        "pilihan_rasio": "9:16",
+                        "platform": "reels",
+                        "use_split_screen": True,
+                        "use_dynamic_split": True,
+                        "split_auto_zoom": True,
+                        "split_trigger": "diarization",
+                        "diarization_speakers": 2,
+                    }),
+                    _now().isoformat(),
+                    _now().isoformat(),
+                ),
+                (
+                    "linkedin_square",
+                    "1:1 Square professional video preset with clean subtitles for LinkedIn and X.",
+                    json.dumps({
+                        "pilihan_rasio": "1:1",
+                        "platform": "linkedin",
+                        "gaya_font_aktif": "DEFAULT",
+                        "use_auto_bgm": False,
+                        "use_hook_glitch": False,
+                    }),
+                    _now().isoformat(),
+                    _now().isoformat(),
+                ),
+            ]
+            conn.executemany(
+                "INSERT INTO presets (name, description, config, created_at, updated_at) VALUES (?, ?, ?, ?, ?);",
+                default_presets,
+            )
 
         # Check if table is empty and legacy jobs.json exists
         cur = conn.execute("SELECT COUNT(*) FROM jobs;")
@@ -132,6 +239,7 @@ def _row_to_job_dict(row: sqlite3.Row) -> dict:
     progress = json.loads(row["progress"]) if row["progress"] else None
     clips = json.loads(row["clips"]) if row["clips"] else []
     log = json.loads(row["log"]) if row["log"] else []
+    tags = json.loads(row["tags"]) if ("tags" in row.keys() and row["tags"]) else []
 
     return {
         "id": row["id"],
@@ -146,6 +254,7 @@ def _row_to_job_dict(row: sqlite3.Row) -> dict:
         "clips": clips,
         "error": row["error"],
         "log": log,
+        "tags": tags,
     }
 
 
@@ -186,6 +295,7 @@ def create_job(
     source: str = "youtube",
     config: dict | None = None,
     job_id: str | None = None,
+    tags: list[str] | None = None,
 ) -> str:
     """Create a new job and return its ID."""
     job_id = job_id or uuid.uuid4().hex[:12]
@@ -193,6 +303,7 @@ def create_job(
     config_json = json.dumps(config or {}, ensure_ascii=False)
     log_json = json.dumps([], ensure_ascii=False)
     clips_json = json.dumps([], ensure_ascii=False)
+    tags_json = json.dumps(tags or [], ensure_ascii=False)
 
     with _lock:
         with _get_conn() as conn:
@@ -200,9 +311,9 @@ def create_job(
                 """
                 INSERT OR REPLACE INTO jobs (
                     id, status, url, upload_filename, source,
-                    config, progress, clips, error, log,
+                    config, progress, clips, error, log, tags,
                     created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, NULL, ?, NULL, ?, ?, ?);
+                ) VALUES (?, ?, ?, ?, ?, ?, NULL, ?, NULL, ?, ?, ?, ?);
                 """,
                 (
                     job_id,
@@ -213,6 +324,7 @@ def create_job(
                     config_json,
                     clips_json,
                     log_json,
+                    tags_json,
                     now_iso,
                     now_iso,
                 ),
@@ -424,3 +536,190 @@ def reconcile_orphan_jobs(error_message: str = "Interrupted by server restart") 
         if count > 0:
             _persist()
         return count
+
+
+# ---------------------------------------------------------------------------
+# Advanced Job Search, Filters, Bulk Operations & Presets
+# ---------------------------------------------------------------------------
+
+def search_jobs(
+    query: Optional[str] = None,
+    status: Optional[str] = None,
+    tag: Optional[str] = None,
+    limit: int = 50,
+    offset: int = 0,
+) -> tuple[list[dict], int]:
+    """
+    Search and filter jobs by status, search string, and tags with pagination.
+
+    Returns:
+        tuple of (list_of_job_dicts, total_matching_count)
+    """
+    with _get_conn() as conn:
+        conditions = []
+        params: list[object] = []
+
+        if status:
+            conditions.append("status = ?")
+            params.append(status)
+
+        if query:
+            q_like = f"%{query}%"
+            conditions.append("(url LIKE ? OR upload_filename LIKE ? OR error LIKE ? OR config LIKE ? OR id LIKE ?)")
+            params.extend([q_like, q_like, q_like, q_like, q_like])
+
+        if tag:
+            t_like = f"%{tag}%"
+            conditions.append("tags LIKE ?")
+            params.append(t_like)
+
+        where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+
+        # Total matching count
+        count_cur = conn.execute(f"SELECT COUNT(*) FROM jobs {where_clause};", params)
+        total = count_cur.fetchone()[0]
+
+        # Paginated results
+        query_sql = f"SELECT * FROM jobs {where_clause} ORDER BY created_at DESC LIMIT ? OFFSET ?;"
+        cur = conn.execute(query_sql, params + [limit, offset])
+        jobs = [_row_to_job_dict(row) for row in cur.fetchall()]
+
+        return jobs, total
+
+
+def cancel_job(job_id: str) -> bool:
+    """Mark a queued or running job as CANCELLED."""
+    with _lock:
+        with _get_conn() as conn:
+            cur = conn.execute("SELECT status FROM jobs WHERE id = ?;", (job_id,))
+            row = cur.fetchone()
+            if not row:
+                return False
+            conn.execute(
+                "UPDATE jobs SET status = ?, updated_at = ? WHERE id = ?;",
+                (JobStatus.CANCELLED.value, _now().isoformat(), job_id),
+            )
+        _persist()
+    return True
+
+
+def clone_job(job_id: str, config_overrides: Optional[dict] = None) -> Optional[str]:
+    """Clone an existing job with optional config overrides and return new job_id."""
+    existing = get_job(job_id)
+    if not existing:
+        return None
+
+    cfg = dict(existing.get("config", {}))
+    if config_overrides:
+        cfg.update(config_overrides)
+
+    return create_job(
+        url=existing.get("url"),
+        upload_filename=existing.get("upload_filename"),
+        source=existing.get("source", "youtube"),
+        config=cfg,
+        tags=existing.get("tags", []),
+    )
+
+
+def update_job_tags(job_id: str, tags: list[str]) -> bool:
+    """Update tags array for a job."""
+    with _lock:
+        with _get_conn() as conn:
+            cur = conn.execute("SELECT id FROM jobs WHERE id = ?;", (job_id,))
+            if not cur.fetchone():
+                return False
+            conn.execute(
+                "UPDATE jobs SET tags = ?, updated_at = ? WHERE id = ?;",
+                (json.dumps(tags, ensure_ascii=False), _now().isoformat(), job_id),
+            )
+        _persist()
+    return True
+
+
+def bulk_delete_jobs(job_ids: list[str]) -> int:
+    """Delete multiple jobs in a single transaction."""
+    if not job_ids:
+        return 0
+    with _lock:
+        with _get_conn() as conn:
+            placeholders = ",".join("?" for _ in job_ids)
+            cur = conn.execute(f"DELETE FROM jobs WHERE id IN ({placeholders});", job_ids)
+            deleted = cur.rowcount
+        _persist()
+    return deleted
+
+
+def bulk_cancel_jobs(job_ids: list[str]) -> int:
+    """Cancel multiple jobs in a single transaction."""
+    if not job_ids:
+        return 0
+    with _lock:
+        with _get_conn() as conn:
+            placeholders = ",".join("?" for _ in job_ids)
+            cur = conn.execute(
+                f"UPDATE jobs SET status = ?, updated_at = ? WHERE id IN ({placeholders}) AND status NOT IN (?, ?);",
+                [JobStatus.CANCELLED.value, _now().isoformat()] + job_ids + [JobStatus.COMPLETED.value, JobStatus.FAILED.value],
+            )
+            cancelled = cur.rowcount
+        _persist()
+    return cancelled
+
+
+# ---------------------------------------------------------------------------
+# Presets CRUD
+# ---------------------------------------------------------------------------
+
+def save_preset(name: str, config: dict, description: str = "") -> dict:
+    """Save or update a named preset profile."""
+    now_iso = _now().isoformat()
+    with _lock:
+        with _get_conn() as conn:
+            conn.execute(
+                """
+                INSERT OR REPLACE INTO presets (name, description, config, created_at, updated_at)
+                VALUES (?, ?, ?, COALESCE((SELECT created_at FROM presets WHERE name = ?), ?), ?);
+                """,
+                (name, description, json.dumps(config, ensure_ascii=False), name, now_iso, now_iso),
+            )
+    return {"name": name, "description": description, "config": config, "updated_at": now_iso}
+
+
+def get_preset(name: str) -> Optional[dict]:
+    """Retrieve a preset by name."""
+    with _get_conn() as conn:
+        cur = conn.execute("SELECT * FROM presets WHERE name = ?;", (name,))
+        row = cur.fetchone()
+        if not row:
+            return None
+        return {
+            "name": row["name"],
+            "description": row["description"] or "",
+            "config": json.loads(row["config"]) if row["config"] else {},
+            "created_at": row["created_at"],
+            "updated_at": row["updated_at"],
+        }
+
+
+def list_presets() -> list[dict]:
+    """List all available presets."""
+    with _get_conn() as conn:
+        cur = conn.execute("SELECT * FROM presets ORDER BY name ASC;")
+        return [
+            {
+                "name": row["name"],
+                "description": row["description"] or "",
+                "config": json.loads(row["config"]) if row["config"] else {},
+                "created_at": row["created_at"],
+                "updated_at": row["updated_at"],
+            }
+            for row in cur.fetchall()
+        ]
+
+
+def delete_preset(name: str) -> bool:
+    """Delete a preset by name."""
+    with _lock:
+        with _get_conn() as conn:
+            cur = conn.execute("DELETE FROM presets WHERE name = ?;", (name,))
+            return cur.rowcount > 0
