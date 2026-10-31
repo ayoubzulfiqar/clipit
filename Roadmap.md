@@ -258,25 +258,25 @@ wiki), `notebooks/` (Colab/Kaggle), `youtube_tracker/`, `youtube_uploader/`,
 ### 7.2 Competitive Feature Parity Workstreams
 
 #### A. Kinetic Typography & Audio-Visual Polish (Submagic & Opus Clip Benchmark)
-- [ ] **Transcript Semantic Emoji Engine:** Detect keywords in transcript (e.g. "money", "rocket", "shock", "warning") and auto-composite contextual animated emojis into the ASS subtitle stream.
-- [ ] **Dynamic Sound Effects (SFX) Compositing:** Auto-layer whooshes, pops, risers, and impact sound effects on hook transitions and punchlines.
-- [ ] **Auto-Highlight Keyword Coloring:** Multi-palette color highlights driven by LLM emphasis markers.
+- [x] **Transcript Semantic Emoji Engine:** Detect keywords in transcript (e.g. "money", "rocket", "shock", "warning") and auto-composite contextual animated emojis into the ASS subtitle stream (`clipping/emoji_engine.py`, `--semantic-emojis`).
+- [x] **Dynamic Sound Effects (SFX) Compositing:** Auto-layer whooshes, pops, risers, and impact sound effects on hook transitions and punchlines via synthetic FFmpeg or local assets (`clipping/studio/sfx.py`, `--use-sfx`).
+- [x] **Auto-Highlight Keyword Coloring:** Multi-palette color highlights driven by semantic emotion and LLM emphasis markers (`clipping/emoji_engine.py`, `clipping/studio/subtitles.py`, `--keyword-palette`).
 
 #### B. Smart Trimming & Retention Engineering (Wisecut & Opus Clip Benchmark)
-- [ ] **Automated Silence & Dead-Air Removal (Jump-Cutter):** Pre-pass audio VAD / FFmpeg `silencedetect` to auto-splice pauses and filler words before LLM segmentation.
-- [ ] **Scene-Cut Auto-Snapping:** Detect natural camera transitions (`select='gt(scene,0.4)'`) and snap clip boundaries to clean scene changes.
+- [x] **Automated Silence & Dead-Air Removal (Jump-Cutter):** Pre-pass audio VAD / FFmpeg `silencedetect` and word timestamp analysis to auto-splice pauses and filler words before LLM segmentation (`clipping/silence.py`, `--silence-trim`).
+- [x] **Scene-Cut Auto-Snapping:** Detect natural camera transitions (`select='gt(scene,0.35)'`) and snap clip boundaries to clean scene changes (`clipping/scene_detect.py`, `--snap-scene-cuts`).
 
 #### C. Interactive Web Studio Experience (Veed.io, Vizard AI & Opus Clip Benchmark)
 - [ ] **Interactive Waveform Trimmer:** Browser-based visual waveform trimming (`wavesurfer.js`) in the React 19 dashboard for non-destructive pre-render adjustment.
 - [ ] **Transcript Text-Based Video Editor:** Interactive text editor allowing users to click/delete words to slice corresponding video frames.
-- [ ] **Side-by-Side Multi-Layout Previewer:** Real-time aspect ratio comparison (9:16 vs 1:1 vs 16:9).
+- [x] **Side-by-Side Multi-Layout Previewer:** Real-time aspect ratio comparison (9:16 vs 1:1 vs 16:9) in React dashboard (`web/dashboard/src/pages/JobDetail.jsx`).
 
 #### D. Multi-Platform Publishing & Scheduling (Munch, Short.ai & SendShort Benchmark)
 - [ ] **Native OAuth Multi-Platform Publishing:** Direct scheduled publishing to TikTok Content Posting API, YouTube Shorts API, and Instagram Reels Graph API.
-- [ ] **Automated Social Copy Customization:** Platform-specific character count and hashtag limit enforcement per destination channel.
+- [x] **Automated Social Copy Customization:** Platform-specific character count and hashtag limit enforcement per destination channel (`clipping/metadata.py`).
 
 #### E. Distributed Infrastructure & Scaling (SupoClip & Enterprise Benchmark)
-- [ ] **Decoupled Task Broker:** Transition in-process `ThreadPoolExecutor` to Redis-backed ARQ/Celery worker pool for horizontal scaling across multi-GPU nodes.
+- [x] **Decoupled Task Broker:** Transition in-process `ThreadPoolExecutor` to Redis-backed queue (`web/api/queue.py`, `CLIPIT_REDIS_URL`) for horizontal scaling across multi-GPU nodes.
 - [ ] **Serverless GPU Offload:** Optional runner backend targeting Modal / RunPod / Replicate for zero-local-hardware deployments.
 
 #### F. Gaming & Streaming Highlights (Nexus Clips, Spikes Studio & CutLabs Benchmark)
@@ -337,15 +337,15 @@ wiki), `notebooks/` (Colab/Kaggle), `youtube_tracker/`, `youtube_uploader/`,
 - Transcription: `--whisper-model`, `--whisper-device`, `--whisper-compute-type`, `--use-dlp-subs`
 - AI: `--gemini-model`, `--gemini-fallback-model`, `--ai-provider`, `--nvidia-model`, `--load-gemini-json`
 - Framing: `--face-detector`, `--box-face-detection`, `--track-*`, `--static-crop`
-- Rendering: `--font-style`, `--no-subs`, `--no-karaoke`, `--hook-duration`, `--no-hook`, `--hook-v2*`
+- Rendering: `--font-style`, `--semantic-emojis`, `--keyword-palette`, `--no-subs`, `--no-karaoke`, `--hook-duration`, `--no-hook`, `--hook-v2*`
 - B-roll: `--no-broll`, `--hook-source`, `--hook-source-start`
-- Audio: `--no-bgm`, `--bgm-mode`, `--no-subs`, `--edge-glow*`, `--original-volume`
+- Audio: `--no-bgm`, `--bgm-mode`, `--use-sfx`, `--sfx-volume`, `--normalize-audio`, `--target-lufs`, `--edge-glow*`, `--original-volume`
 - Podcast: `--split-screen`, `--dynamic-split`, `--split-*`, `--diarization-speakers`, `--camera-switch`, `--switch-*`
 - Watermark: `--watermark`, `--image`, `--text`, `--position`, `--opacity`, `--padding`, `--watermark-*`
 - Voice-over: `--voiceover*`
 - Story mode: `--story-mode`, `--story-recipe`, `--sources-json`, `--story-output-dir`, `--skip-download`
 - Video encoding: `--video-crf`, `--video-cq`, `--video-bitrate`, `--video-preset`, `--video-sharpen`, `--video-scale-algo`, `--render-height`, `--source-height`
-- Misc: `--dev-mode*`, `--white-flash-duration`, `--silence-trim`, `--scene-cut-threshold`
+- Misc & Optimization: `--dev-mode*`, `--white-flash-duration`, `--silence-trim`, `--snap-scene-cuts`, `--scene-snap-distance`, `--dedup`, `--thumbnail-variants`
 
 ---
 
