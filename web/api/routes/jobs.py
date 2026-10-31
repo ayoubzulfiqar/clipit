@@ -12,11 +12,14 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 
 from ..models import (
+    ClipDetail,
+    JobBulkActionRequest,
+    JobCloneRequest,
     JobCreateRequest,
     JobListResponse,
     JobResponse,
     JobStatus,
-    ClipDetail,
+    JobTagsRequest,
 )
 from .. import store
 from .. import worker
@@ -55,6 +58,7 @@ def _job_to_response(job: dict) -> JobResponse:
         clips=clip_list,
         error=job.get("error"),
         log=job.get("log", []),
+        tags=job.get("tags", []),
     )
 
 
@@ -95,13 +99,114 @@ async def create_job(req: JobCreateRequest) -> JobResponse:
 
 
 @router.get("")
-async def list_jobs() -> JobListResponse:
-    """List all jobs (newest first)."""
-    jobs = store.list_jobs()
+async def list_jobs(
+    search: Optional[str] = None,
+    status: Optional[str] = None,
+    tag: Optional[str] = None,
+    limit: int = 50,
+    offset: int = 0,
+) -> JobListResponse:
+    """List jobs with optional search query, status, tag filtering, and pagination."""
+    if search or status or tag:
+        jobs, total = store.search_jobs(
+            query=search,
+            status=status,
+            tag=tag,
+            limit=limit,
+            offset=offset,
+        )
+    else:
+        all_jobs = store.list_jobs()
+        total = len(all_jobs)
+        jobs = all_jobs[offset : offset + limit]
+
     return JobListResponse(
         jobs=[_job_to_response(j) for j in jobs],
-        total=len(jobs),
+        total=total,
     )
+
+
+@router.post("/bulk")
+async def bulk_action(req: JobBulkActionRequest) -> dict:
+    """Perform bulk action (cancel, retry, or delete) across multiple jobs."""
+    act = req.action.lower().strip()
+    if act == "cancel":
+        count = store.bulk_cancel_jobs(req.job_ids)
+        return {"action": act, "affected": count, "message": f"{count} job(s) cancelled"}
+    elif act == "delete":
+        count = store.bulk_delete_jobs(req.job_ids)
+        return {"action": act, "affected": count, "message": f"{count} job(s) deleted"}
+    elif act == "retry":
+        retried = []
+        for jid in req.job_ids:
+            old_job = store.get_job(jid)
+            if old_job:
+                new_id = store.clone_job(jid)
+                if new_id:
+                    await worker.submit_job(new_id, old_job.get("config", {}))
+                    retried.append(new_id)
+        return {"action": act, "affected": len(retried), "retried_job_ids": retried}
+    else:
+        raise HTTPException(status_code=400, detail=f"Unsupported bulk action '{act}'. Use cancel, retry, or delete.")
+
+
+@router.post("/{job_id}/cancel")
+async def cancel_job(job_id: str) -> JobResponse:
+    """Cancel a running or queued job."""
+    job = store.get_job(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    success = store.cancel_job(job_id)
+    if not success:
+        raise HTTPException(status_code=400, detail="Unable to cancel job")
+
+    updated = store.get_job(job_id)
+    return _job_to_response(updated)
+
+
+@router.post("/{job_id}/retry", status_code=201)
+async def retry_job(job_id: str) -> JobResponse:
+    """Retry a failed, cancelled, or finished job by cloning its parameters into a new run."""
+    job = store.get_job(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    new_id = store.clone_job(job_id)
+    if not new_id:
+        raise HTTPException(status_code=500, detail="Failed to create retry job")
+
+    await worker.submit_job(new_id, job.get("config", {}))
+    new_job = store.get_job(new_id)
+    return _job_to_response(new_job)
+
+
+@router.post("/{job_id}/clone", status_code=201)
+async def clone_job(job_id: str, req: JobCloneRequest) -> JobResponse:
+    """Clone a job with optional configuration overrides."""
+    job = store.get_job(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    new_id = store.clone_job(job_id, config_overrides=req.config_overrides)
+    if not new_id:
+        raise HTTPException(status_code=500, detail="Failed to clone job")
+
+    new_job = store.get_job(new_id)
+    await worker.submit_job(new_id, new_job.get("config", {}))
+    return _job_to_response(new_job)
+
+
+@router.post("/{job_id}/tags")
+async def update_job_tags(job_id: str, req: JobTagsRequest) -> JobResponse:
+    """Update custom tags on a job."""
+    job = store.get_job(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    store.update_job_tags(job_id, req.tags)
+    updated = store.get_job(job_id)
+    return _job_to_response(updated)
 
 
 @router.get("/{job_id}")
