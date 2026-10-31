@@ -62,6 +62,7 @@ download_pexels_broll = broll.download_pexels_broll
 crop_center_broll = broll.crop_center_broll
 
 buat_file_ass = subtitles.buat_file_ass
+export_sidecar_subtitles = subtitles.export_sidecar_subtitles
 
 siapkan_glitch_video = effects.siapkan_glitch_video
 
@@ -72,6 +73,9 @@ prepare_transition_clip = transitions.prepare_transition_clip
 TMP_TRANSITION_POOL = transitions.TMP_TRANSITION_POOL
 
 buat_thumbnail = thumbnail.buat_thumbnail
+buat_thumbnail_variants = thumbnail.buat_thumbnail_variants
+
+from clipping.silence import detect_silence_from_words, compute_keep_segments
 
 buat_video_hybrid = render_hybrid.buat_video_hybrid
 buat_video_split_screen = render_split_screen.buat_video_split_screen
@@ -453,6 +457,21 @@ def proses_klip(
 
         # MAIN
         keep_segments = clip.get("keep_segments")
+        if getattr(cfg, "silence_trim", False) and (not keep_segments or len(keep_segments) <= 1):
+            min_silence = getattr(cfg, "silence_min_duration", 0.5)
+            silence_intervals = detect_silence_from_words(
+                data_segmen, m_start, m_end, min_silence_duration=min_silence
+            )
+            if silence_intervals:
+                auto_keep = compute_keep_segments(m_start, m_end, silence_intervals)
+                if len(auto_keep) > 1:
+                    print(
+                        f"   ✂️ [Smart Silence Trim] Terdeteksi {len(silence_intervals)} jeda/dead air, "
+                        f"memotong menjadi {len(auto_keep)} segmen aktif."
+                    )
+                    keep_segments = auto_keep
+                    clip["keep_segments"] = auto_keep
+
         use_segments = (
             keep_segments
             and len(keep_segments) > 1
@@ -567,9 +586,13 @@ def proses_klip(
                 m_ts_bgm = f"m_bgm_{rank}.ts"
                 seg_total_dur = sum(float(s["end_time"]) - float(s["start_time"]) for s in keep_segments)
                 bgm_mode = getattr(cfg, "bgm_mode", "ducking")
+                normalize_lufs = getattr(cfg, "normalize_audio", False)
+                target_lufs = getattr(cfg, "target_lufs", -14.0)
                 filter_complex_seg = build_bgm_filter(
                     bgm_mode, cfg.bgm_base_volume,
-                    audio_input_voc="[0:a]", audio_input_bgm="[1:a]"
+                    audio_input_voc="[0:a]", audio_input_bgm="[1:a]",
+                    normalize_loudness=normalize_lufs,
+                    target_lufs=target_lufs,
                 )
                 cmd_bgm_seg = [
                     "ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
@@ -697,9 +720,13 @@ def proses_klip(
                 if input_idx_bgm != -1:
                     # Only BGM, no VO
                     bgm_mode = getattr(cfg, "bgm_mode", "ducking")
+                    normalize_lufs = getattr(cfg, "normalize_audio", False)
+                    target_lufs = getattr(cfg, "target_lufs", -14.0)
                     audio_filter = build_bgm_filter(
                         bgm_mode, cfg.bgm_base_volume,
-                        audio_input_voc="[1:a]", audio_input_bgm=f"[{input_idx_bgm}:a]"
+                        audio_input_voc="[1:a]", audio_input_bgm=f"[{input_idx_bgm}:a]",
+                        normalize_loudness=normalize_lufs,
+                        target_lufs=target_lufs,
                     )
                     filter_complex = f"[0:v]{v_filter}[v_out]; {audio_filter}"
                     
@@ -710,9 +737,20 @@ def proses_klip(
                     
                 else:
                     # No BGM — just original audio with subtitles
-                    cmd_m_base.extend(["-map", "0:v:0", "-map", "1:a:0"])
-                    if v_filter != "null":
-                        cmd_m_base.extend(["-vf", v_filter])
+                    normalize_lufs = getattr(cfg, "normalize_audio", False)
+                    target_lufs = getattr(cfg, "target_lufs", -14.0)
+                    if normalize_lufs:
+                        from .audio_bgm import build_audio_loudnorm_filter
+                        loud_f = build_audio_loudnorm_filter("[1:a]", target_lufs=target_lufs)
+                        filter_complex = f"[0:v]{v_filter}[v_out]; {loud_f}"
+                        cmd_m_base.extend([
+                            "-filter_complex", filter_complex,
+                            "-map", "[v_out]", "-map", "[a_out]"
+                        ])
+                    else:
+                        cmd_m_base.extend(["-map", "0:v:0", "-map", "1:a:0"])
+                        if v_filter != "null":
+                            cmd_m_base.extend(["-vf", v_filter])
                         
                 cmd_m_base += std_p
 
@@ -1077,11 +1115,27 @@ def proses_klip(
                         os.remove(glow_full_path)
 
         judul_thumbnail = judul_en or judul or f"Highlight {rank}"
-        buat_thumbnail(out_vid, out_thm, judul_thumbnail, cfg)
+        thumb_count = getattr(cfg, "thumbnail_variants", 3)
+        thm_variants = buat_thumbnail_variants(out_vid, out_thm, judul_thumbnail, cfg, count=thumb_count)
+
+        # Export sidecar subtitles (.srt, .vtt)
+        export_subs = getattr(cfg, "export_subtitles", "all")
+        sub_langs = [l.strip() for l in getattr(cfg, "subtitle_languages", "").split(",") if l.strip()]
+        sidecar_subs = export_sidecar_subtitles(
+            data_segmen=data_segmen,
+            clip_start=m_start,
+            clip_end=m_end,
+            base_video_path=out_vid,
+            formats=(export_subs,) if isinstance(export_subs, str) else tuple(export_subs),
+            languages=sub_langs,
+        )
 
         manifest_item["status"] = "success"
         manifest_item["video_exists"] = os.path.exists(out_vid)
         manifest_item["thumbnail_exists"] = os.path.exists(out_thm)
+        manifest_item["thumbnail_variants"] = thm_variants
+        manifest_item["sidecar_subtitles"] = sidecar_subs
+        manifest_item["virality_factors"] = clip.get("virality_factors", {})
 
         print(f"✅ [Rank {rank}] Selesai.")
         return manifest_item
