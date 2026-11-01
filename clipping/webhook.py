@@ -15,6 +15,7 @@ from typing import Any, Dict, Optional
 import urllib.request
 import urllib.error
 
+from clipping import __version__
 from clipping.logger import get_logger
 
 logger = get_logger("clipping.webhook")
@@ -76,7 +77,7 @@ def dispatch_webhook(
 
     headers = {
         "Content-Type": "application/json",
-        "User-Agent": "Clipit-Webhook/1.15.0",
+        "User-Agent": f"Clipit-Webhook/{__version__}",
     }
     if secret:
         sig = compute_signature(payload_bytes, secret)
