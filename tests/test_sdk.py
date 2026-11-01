@@ -12,13 +12,13 @@ class TestClipitSDK(unittest.TestCase):
     @patch("urllib.request.urlopen")
     def test_health(self, mock_urlopen):
         mock_resp = MagicMock()
-        mock_resp.read.return_value = json.dumps({"status": "ok", "version": "1.15.0"}).encode("utf-8")
+        mock_resp.read.return_value = json.dumps({"status": "ok", "version": "1.6.9"}).encode("utf-8")
         mock_resp.__enter__.return_value = mock_resp
         mock_urlopen.return_value = mock_resp
 
         res = self.client.health()
         self.assertEqual(res["status"], "ok")
-        self.assertEqual(res["version"], "1.15.0")
+        self.assertEqual(res["version"], "1.6.9")
 
     @patch("urllib.request.urlopen")
     def test_create_job(self, mock_urlopen):
