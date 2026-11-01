@@ -8,9 +8,9 @@ import clipping
 
 class TestVersionConsistency(unittest.TestCase):
     def test_clipping_version_defined(self):
-        """Test that clipping package defines __version__ as 1.15.0."""
+        """Test that clipping package defines __version__ as 1.6.9."""
         self.assertTrue(hasattr(clipping, "__version__"))
-        self.assertEqual(clipping.__version__, "1.15.0")
+        self.assertEqual(clipping.__version__, "1.6.9")
 
     def test_pyproject_version_matches(self):
         """Test that pyproject.toml matches clipping.__version__."""
