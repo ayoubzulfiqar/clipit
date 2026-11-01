@@ -201,3 +201,120 @@ export function createSSEConnection(jobId, onMessage) {
 
   return eventSource
 }
+
+// ==========================================
+// Batch Studio API
+// ==========================================
+export async function createBatchJobs(payload) {
+  const res = await fetch(`${API_BASE}/batch/jobs`, {
+    method: 'POST',
+    headers: authHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.detail || 'Failed to submit batch jobs')
+  }
+  return res.json()
+}
+
+export async function fetchBatchStatus(batchId) {
+  const res = await fetch(`${API_BASE}/batch/${batchId}`, { headers: authHeaders() })
+  if (!res.ok) throw new Error('Failed to fetch batch status')
+  return res.json()
+}
+
+export async function cancelBatchJobs(batchId) {
+  const res = await fetch(`${API_BASE}/batch/${batchId}/cancel`, {
+    method: 'POST',
+    headers: authHeaders(),
+  })
+  if (!res.ok) throw new Error('Failed to cancel batch')
+  return res.json()
+}
+
+// ==========================================
+// Intelligence Tools & Marketplace API
+// ==========================================
+export async function scoreThumbnail(file) {
+  const formData = new FormData()
+  formData.append('file', file)
+  const res = await fetch(`${API_BASE}/tools/vision-score`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: formData,
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.detail || 'Vision scoring failed')
+  }
+  return res.json()
+}
+
+export async function checkCopyright(payload) {
+  const res = await fetch(`${API_BASE}/tools/copyright-check`, {
+    method: 'POST',
+    headers: authHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.detail || 'Copyright check failed')
+  }
+  return res.json()
+}
+
+export async function generateChapters(payload) {
+  const res = await fetch(`${API_BASE}/tools/chapters`, {
+    method: 'POST',
+    headers: authHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.detail || 'Failed to generate chapters')
+  }
+  return res.json()
+}
+
+export async function generateCalendar(payload) {
+  const res = await fetch(`${API_BASE}/tools/calendar`, {
+    method: 'POST',
+    headers: authHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.detail || 'Failed to generate calendar')
+  }
+  return res.json()
+}
+
+export async function exportMarketplacePack(payload) {
+  const res = await fetch(`${API_BASE}/tools/marketplace/export`, {
+    method: 'POST',
+    headers: authHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.detail || 'Export marketplace pack failed')
+  }
+  return res.json()
+}
+
+export async function importMarketplacePack(file) {
+  const formData = new FormData()
+  formData.append('file', file)
+  const res = await fetch(`${API_BASE}/tools/marketplace/import`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: formData,
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.detail || 'Import marketplace pack failed')
+  }
+  return res.json()
+}
+
