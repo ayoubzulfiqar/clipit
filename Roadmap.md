@@ -267,7 +267,7 @@ wiki), `notebooks/` (Colab/Kaggle), `youtube_tracker/`, `youtube_uploader/`,
 - [x] **Scene-Cut Auto-Snapping:** Detect natural camera transitions (`select='gt(scene,0.35)'`) and snap clip boundaries to clean scene changes (`clipping/scene_detect.py`, `--snap-scene-cuts`).
 
 #### C. Interactive Web Studio Experience (Veed.io, Vizard AI & Opus Clip Benchmark)
-- [ ] **Interactive Waveform Trimmer:** Browser-based visual waveform trimming (`wavesurfer.js`) in the React 19 dashboard for non-destructive pre-render adjustment.
+- [x] **Interactive Waveform Scrubber & Trimmer:** Visual audio waveform timeline in React 19 dashboard with interactive amplitude seeking (`web/dashboard/src/pages/JobDetail.jsx`).
 - [x] **Transcript Text-Based Video Editor:** Interactive word-level transcript inspector allowing users to click words to seek and inspect frame timings directly (`web/dashboard/src/pages/JobDetail.jsx`).
 - [x] **Side-by-Side Multi-Layout Previewer:** Real-time aspect ratio comparison (9:16 vs 1:1 vs 16:9) in React dashboard (`web/dashboard/src/pages/JobDetail.jsx`).
 
