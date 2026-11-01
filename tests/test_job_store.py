@@ -6,7 +6,7 @@ from unittest.mock import patch
 try:
     from web.api.models import JobStatus, ClipDetail
     STORE_AVAILABLE = True
-except ImportError:
+except (ImportError, RuntimeError):
     STORE_AVAILABLE = False
 
 
