@@ -67,7 +67,7 @@ function App() {
         <div className="sidebar-brand" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <h1>🎬 Clipit Studio</h1>
-            <p>AI Auto-Clipper v1.15.0</p>
+            <p>AI Auto-Clipper v1.6.9</p>
           </div>
           <button
             type="button"
@@ -150,7 +150,7 @@ function App() {
 
         <div style={{ padding: '12px 14px', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-            Clipit Core v1.15.0
+            Clipit Core v1.6.9
           </div>
           <span style={{ fontSize: '10px', color: 'var(--accent)', fontWeight: 700, background: 'rgba(99,102,241,0.1)', padding: '2px 6px', borderRadius: '4px' }}>
             STUDIO
