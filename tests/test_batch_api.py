@@ -12,7 +12,7 @@ try:
     )
     from web.api import store
     BATCH_AVAILABLE = True
-except ImportError:
+except (ImportError, RuntimeError):
     BATCH_AVAILABLE = False
 
 
