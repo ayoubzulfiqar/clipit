@@ -41,7 +41,7 @@ class ClipitClient:
 
     def _headers(self, content_type: Optional[str] = "application/json") -> Dict[str, str]:
         headers = {
-            "User-Agent": "Clipit-Python-SDK/1.15.0",
+            "User-Agent": "Clipit-Python-SDK/1.6.9",
         }
         if content_type:
             headers["Content-Type"] = content_type
