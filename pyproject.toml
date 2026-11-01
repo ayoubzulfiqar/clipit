@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "clipit"
-version = "1.15.0"
+version = "1.6.9"
 description = "AI Auto-Clipper & Teaser Generator — converts long videos into viral short-form clips"
 readme = "README.md"
 requires-python = ">=3.10"
