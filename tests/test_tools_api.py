@@ -12,7 +12,7 @@ try:
         generate_chapters,
     )
     TOOLS_AVAILABLE = True
-except ImportError:
+except (ImportError, RuntimeError):
     TOOLS_AVAILABLE = False
 
 
