@@ -13,8 +13,8 @@ auto-framing, B-roll, karaoke subtitles, cinematic hooks, BGM ducking, voice-ove
 multi-speaker podcast layouts into a single render pipeline. It ships as both a CLI
 (`main.py`) and a web studio (FastAPI backend + React dashboard).
 
-- **Version:** 1.15.0 (Unified CLI, Web Studio, API, and Package Manifests)
-- **License:** MIT
+- **Version:** 1.6.9 (Unified CLI, Web Studio, API, and Package Manifests)
+- **License:** AGPL-3.0
 - **Author:** Ayoub Zulfiqar
 - **Repo:** https://github.com/ayoubzulfiqar/clipit
 
