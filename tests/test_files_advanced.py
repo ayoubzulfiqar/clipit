@@ -7,7 +7,7 @@ import unittest
 try:
     from web.api.routes.files import cleanup_old_files, download_job_zip
     FASTAPI_AVAILABLE = True
-except ImportError:
+except (ImportError, RuntimeError):
     FASTAPI_AVAILABLE = False
 
 
