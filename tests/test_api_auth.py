@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, patch
 try:
     from web.api.app import api_key_auth_middleware
     FASTAPI_AVAILABLE = True
-except ImportError:
+except (ImportError, RuntimeError):
     FASTAPI_AVAILABLE = False
 
 
