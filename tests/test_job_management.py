@@ -4,7 +4,7 @@ try:
     from web.api.models import JobStatus
     from web.api import store
     API_AVAILABLE = True
-except ImportError:
+except (ImportError, RuntimeError):
     API_AVAILABLE = False
 
 
