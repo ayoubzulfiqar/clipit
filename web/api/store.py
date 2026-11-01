@@ -637,6 +637,10 @@ def update_job_tags(job_id: str, tags: list[str]) -> bool:
     return True
 
 
+# Alias for backward compatibility
+set_tags = update_job_tags
+
+
 def bulk_delete_jobs(job_ids: list[str]) -> int:
     """Delete multiple jobs in a single transaction."""
     if not job_ids:
