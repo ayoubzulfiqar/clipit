@@ -19,7 +19,7 @@
       <img src="https://img.shields.io/github/actions/workflow/status/ayoubzulfiqar/clipit/docker.yml?branch=main&label=Docker%20GHCR&logo=docker" alt="Docker Build">
     </a>
     <a href="https://github.com/ayoubzulfiqar/clipit/releases">
-      <img src="https://img.shields.io/badge/version-1.15.0-blue.svg" alt="Version">
+      <img src="https://img.shields.io/badge/version-1.6.9-blue.svg" alt="Version">
     </a>
     <a href="LICENSE">
       <img src="https://img.shields.io/badge/license-AGPL--3.0-purple.svg" alt="License: AGPL-3.0">
