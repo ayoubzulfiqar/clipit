@@ -19,6 +19,81 @@ const STEPS = [
   { key: 'done', label: 'Done' },
 ]
 
+function WaveformScrubber({ duration = 30, onSeek }) {
+  const [hoverTime, setHoverTime] = useState(null)
+  const barCount = 44
+  const heights = useRef(
+    Array.from({ length: barCount }, (_, i) => 25 + Math.sin(i * 0.45) * 20 + ((i * 19) % 30))
+  ).current
+
+  const handleClick = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const clickX = e.clientX - rect.left
+    const frac = Math.max(0, Math.min(1, clickX / rect.width))
+    onSeek(frac * duration)
+  }
+
+  const handleMouseMove = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const clickX = e.clientX - rect.left
+    const frac = Math.max(0, Math.min(1, clickX / rect.width))
+    setHoverTime((frac * duration).toFixed(1))
+  }
+
+  return (
+    <div
+      onClick={handleClick}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={() => setHoverTime(null)}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        height: '32px',
+        background: 'rgba(0,0,0,0.25)',
+        borderRadius: '6px',
+        padding: '0 8px',
+        cursor: 'pointer',
+        position: 'relative',
+        margin: '8px 0',
+        userSelect: 'none',
+      }}
+      title="Click across audio waveform to seek"
+    >
+      {heights.map((h, idx) => (
+        <div
+          key={idx}
+          style={{
+            width: '3px',
+            height: `${Math.min(95, Math.max(15, h))}%`,
+            background: 'var(--accent, #6366f1)',
+            borderRadius: '2px',
+            opacity: 0.85,
+          }}
+        />
+      ))}
+      {hoverTime !== null && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '-20px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: 'rgba(0,0,0,0.85)',
+            padding: '2px 6px',
+            borderRadius: '4px',
+            fontSize: '10px',
+            color: '#fff',
+            pointerEvents: 'none',
+          }}
+        >
+          {hoverTime}s
+        </div>
+      )}
+    </div>
+  )
+}
+
 function JobDetail() {
   const { jobId } = useParams()
   const navigate = useNavigate()
@@ -169,9 +244,14 @@ function JobDetail() {
           <span className={`badge badge-${job.status}`}>{job.status}</span>
 
           {job.status === 'completed' && (
-            <a href={getZipDownloadUrl(job.id)} download={`clipit_${job.id}.zip`} className="btn btn-primary btn-sm">
-              📦 Download All (.ZIP)
-            </a>
+            <>
+              <a href={getZipDownloadUrl(job.id)} download={`clipit_${job.id}.zip`} className="btn btn-primary btn-sm">
+                📦 Download All (.ZIP)
+              </a>
+              <Link to="/calendar" className="btn btn-secondary btn-sm">
+                📅 Add to Calendar
+              </Link>
+            </>
           )}
 
           {!isTerminal && (
@@ -344,6 +424,12 @@ function JobDetail() {
                       </div>
                     </div>
                   )}
+
+                  {/* Audio Waveform Scrubber */}
+                  <WaveformScrubber
+                    duration={clip.duration || 30}
+                    onSeek={(timeSec) => seekVideo(i, timeSec)}
+                  />
 
                   {/* Interactive Text-Based Cue Inspector Button */}
                   <div style={{ marginTop: '6px' }}>
