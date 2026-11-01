@@ -7,7 +7,7 @@ try:
     from fastapi import HTTPException
     from web.api.routes.files import serve_output, list_outputs, OUTPUTS_DIR
     FASTAPI_AVAILABLE = True
-except ImportError:
+except (ImportError, RuntimeError):
     FASTAPI_AVAILABLE = False
 
 
