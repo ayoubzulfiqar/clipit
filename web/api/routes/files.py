@@ -247,3 +247,19 @@ async def cleanup_old_files(days: int = 7) -> dict:
         "cleaned_uploads": cleaned_uploads,
         "cleaned_outputs": cleaned_outputs,
     }
+
+
+@router.get("/api/files/download_pack/{filename}")
+async def download_pack_file(filename: str) -> FileResponse:
+    """Download an exported .clipit-pack distribution archive."""
+    pack_dir = os.path.join(OUTPUTS_DIR, "packs")
+    os.makedirs(pack_dir, exist_ok=True)
+    safe_path = _validate_safe_child_path(pack_dir, filename)
+    if not os.path.isfile(safe_path):
+        raise HTTPException(status_code=404, detail="Pack file not found")
+    return FileResponse(
+        safe_path,
+        media_type="application/zip",
+        filename=filename,
+    )
+
