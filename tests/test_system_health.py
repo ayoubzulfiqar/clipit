@@ -6,7 +6,7 @@ try:
     from web.api.routes.system import health_liveness, health_readiness
     from clipping import __version__
     FASTAPI_AVAILABLE = True
-except ImportError:
+except (ImportError, RuntimeError):
     FASTAPI_AVAILABLE = False
 
 
