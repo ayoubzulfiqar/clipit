@@ -23,7 +23,7 @@ try:
     from web.api import store, worker
     from web.api.models import JobStatus
     FASTAPI_AVAILABLE = True
-except ImportError:
+except (ImportError, RuntimeError):
     FASTAPI_AVAILABLE = False
 
 
