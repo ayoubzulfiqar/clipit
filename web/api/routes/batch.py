@@ -89,9 +89,8 @@ async def create_batch_jobs(req: BatchJobCreateRequest) -> BatchJobResponse:
             upload_filename=item.upload_filename,
             source=item.source,
             config=cfg_payload,
+            tags=tags,
         )
-        if tags:
-            store.set_tags(job_id, tags)
 
         await worker.submit_job(job_id, cfg_payload)
         job_ids.append(job_id)
