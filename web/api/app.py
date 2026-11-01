@@ -16,7 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from clipping import __version__
-from .routes import batch, files, jobs, presets, settings, system
+from .routes import batch, files, jobs, presets, settings, system, tools
 from . import store
 
 
@@ -96,6 +96,7 @@ app.include_router(files.router)
 app.include_router(presets.router)
 app.include_router(settings.router)
 app.include_router(system.router)
+app.include_router(tools.router)
 
 
 @app.get("/")
