@@ -1,10 +1,14 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "clipit"
 version = "1.15.0"
 description = "AI Auto-Clipper & Teaser Generator — converts long videos into viral short-form clips"
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "AGPL-3.0-or-later" }
+license = "AGPL-3.0-or-later"
 authors = [{ name = "Ayoub Zulfiqar", email = "contact@ayoubzulfiqar.com" }]
 dependencies = [
     "yt-dlp[default]",
@@ -79,8 +83,17 @@ clipping = "main:main"
 clipit-api = "web.api.app:main"
 clipit-web = "web.api.app:main"
 
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["clipping*", "web*", "desktop*", "youtube_uploader*", "facebook_uploader*"]
+exclude = ["tests*", "assets*", "uploads*", "outputs*", "notebooks*", "wiki*", "sdk*", "custom_fonts*"]
+
+[tool.setuptools]
+py-modules = ["main"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["."]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
