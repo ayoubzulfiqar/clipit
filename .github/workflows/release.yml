@@ -1,0 +1,173 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: "Release tag (e.g. v1.6.9)"
+        required: false
+        default: "v1.6.9"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-binaries:
+    name: Build Binary (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact_name: clipit-linux-x86_64
+            archive_name: clipit-linux-x86_64.tar.gz
+            binary_name: clipit
+          - os: macos-latest
+            artifact_name: clipit-macos-arm64
+            archive_name: clipit-macos-arm64.tar.gz
+            binary_name: clipit
+          - os: windows-latest
+            artifact_name: clipit-windows-x64
+            archive_name: clipit-windows-x64.zip
+            binary_name: clipit.exe
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller pydantic requests pillow numpy yt-dlp python-dotenv fastapi uvicorn python-multipart
+          pip install -e . --no-deps
+
+      - name: Build standalone executable with PyInstaller
+        run: |
+          pyinstaller --clean --noconfirm --onefile --name clipit main.py
+
+      - name: Archive executable (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          chmod +x dist/${{ matrix.binary_name }}
+          tar -czvf ${{ matrix.archive_name }} -C dist ${{ matrix.binary_name }}
+
+      - name: Archive executable (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Compress-Archive -Path dist\${{ matrix.binary_name }} -DestinationPath ${{ matrix.archive_name }}
+
+      - name: Upload binary asset
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.archive_name }}
+          if-no-files-found: error
+
+  build-packages:
+    name: Build Python Wheel & Source Dist
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Build sdist and bdist_wheel
+        run: |
+          python -m pip install --upgrade pip build
+          python -m build
+
+      - name: Upload Python distribution packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-dist
+          path: dist/*
+          if-no-files-found: error
+
+  build-dashboard:
+    name: Build Web Studio SPA Bundle
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+          cache-dependency-path: web/dashboard/package-lock.json
+
+      - name: Build Dashboard
+        working-directory: web/dashboard
+        run: |
+          npm ci
+          npm run build
+          cd dist && zip -r ../../../clipit-dashboard.zip .
+
+      - name: Upload dashboard asset
+        uses: actions/upload-artifact@v4
+        with:
+          name: dashboard-bundle
+          path: clipit-dashboard.zip
+          if-no-files-found: error
+
+  publish-release:
+    name: Create GitHub Release & Attach Assets
+    needs: [build-binaries, build-packages, build-dashboard]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download all built artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+
+      - name: Organize release assets and compute checksums
+        run: |
+          mkdir -p release-files
+          find release-artifacts -type f -exec cp {} release-files/ \;
+          cd release-files
+          sha256sum * > sha256sums.txt
+          ls -la
+
+      - name: Determine tag name
+        id: release_tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ github.event.inputs.tag_name }}"
+          else
+            TAG="${GITHUB_REF#refs/tags/}"
+          fi
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release_tag.outputs.tag }}
+          name: Clipit ${{ steps.release_tag.outputs.tag }}
+          files: release-files/*
+          generate_release_notes: true
+          draft: false
+          prerelease: false
